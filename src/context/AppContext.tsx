@@ -39,6 +39,8 @@ interface AppContextType {
   healthBlogs: HealthBlog[];
   isAuthModalOpen: boolean;
   isBookingModalOpen: boolean;
+  isDoctorProfileModalOpen: boolean;
+  selectedDoctorForProfile: DoctorUser | null;
   preselectedDoctorId?: string;
   preselectedClinicId?: string;
   loginWithPhoneOtp: (phone: string, otp: string, role?: UserRole, name?: string) => Promise<{ user: AppUser; isNew: boolean }>;
@@ -50,6 +52,8 @@ interface AppContextType {
   closeAuthModal: () => void;
   openBookingModal: (doctorId?: string, clinicId?: string) => void;
   closeBookingModal: () => void;
+  openDoctorProfileModal: (doctorOrId: DoctorUser | string) => void;
+  closeDoctorProfileModal: () => void;
   bookAppointment: (data: {
     doctorId: string;
     clinicId: string | null;
@@ -67,7 +71,11 @@ interface AppContextType {
   updateAppointmentStatus: (appointmentId: string, status: AppointmentStatus) => void;
   createPrescription: (rxData: Omit<Prescription, 'id' | 'createdAt'>) => Prescription;
   updateDoctor: (doctorId: string, updates: Partial<DoctorUser>) => void;
+  addDoctor: (doctorData: Omit<DoctorUser, 'id'>) => DoctorUser;
+  deleteDoctor: (doctorId: string) => void;
   updateClinic: (clinicId: string, updates: Partial<Clinic>) => void;
+  addClinic: (clinicData: Omit<Clinic, 'id'>) => Clinic;
+  deleteClinic: (clinicId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -114,6 +122,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState<boolean>(false);
+  const [isDoctorProfileModalOpen, setIsDoctorProfileModalOpen] = useState<boolean>(false);
+  const [selectedDoctorForProfile, setSelectedDoctorForProfile] = useState<DoctorUser | null>(null);
   const [preselectedDoctorId, setPreselectedDoctorId] = useState<string | undefined>(undefined);
   const [preselectedClinicId, setPreselectedClinicId] = useState<string | undefined>(undefined);
 
@@ -252,6 +262,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPreselectedClinicId(undefined);
   };
 
+  const openDoctorProfileModal = (doctorOrId: DoctorUser | string) => {
+    if (typeof doctorOrId === 'string') {
+      const doc = doctors.find(d => d.id === doctorOrId) || doctors[0];
+      setSelectedDoctorForProfile(doc);
+    } else {
+      setSelectedDoctorForProfile(doctorOrId);
+    }
+    setIsDoctorProfileModalOpen(true);
+  };
+
+  const closeDoctorProfileModal = () => {
+    setIsDoctorProfileModalOpen(false);
+    setSelectedDoctorForProfile(null);
+  };
+
   const bookAppointment = (data: {
     doctorId: string;
     clinicId: string | null;
@@ -367,8 +392,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     notifyOtherTabs();
   };
 
+  const addDoctor = (doctorData: Omit<DoctorUser, 'id'>): DoctorUser => {
+    const newDoc: DoctorUser = {
+      ...doctorData,
+      id: `doc-${Date.now().toString().slice(-4)}`
+    };
+    setDoctors(prev => [newDoc, ...prev]);
+    notifyOtherTabs();
+    return newDoc;
+  };
+
+  const deleteDoctor = (doctorId: string) => {
+    setDoctors(prev => prev.filter(d => d.id !== doctorId));
+    notifyOtherTabs();
+  };
+
   const updateClinic = (clinicId: string, updates: Partial<Clinic>) => {
     setClinics(prev => prev.map(c => c.id === clinicId ? { ...c, ...updates } : c));
+    notifyOtherTabs();
+  };
+
+  const addClinic = (clinicData: Omit<Clinic, 'id'>): Clinic => {
+    const newClinic: Clinic = {
+      ...clinicData,
+      id: `clinic-${Date.now().toString().slice(-4)}`
+    };
+    setClinics(prev => [newClinic, ...prev]);
+    notifyOtherTabs();
+    return newClinic;
+  };
+
+  const deleteClinic = (clinicId: string) => {
+    setClinics(prev => prev.filter(c => c.id !== clinicId));
     notifyOtherTabs();
   };
 
@@ -388,6 +443,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         healthBlogs,
         isAuthModalOpen,
         isBookingModalOpen,
+        isDoctorProfileModalOpen,
+        selectedDoctorForProfile,
         preselectedDoctorId,
         preselectedClinicId,
         loginWithPhoneOtp,
@@ -399,11 +456,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         closeAuthModal,
         openBookingModal,
         closeBookingModal,
+        openDoctorProfileModal,
+        closeDoctorProfileModal,
         bookAppointment,
         updateAppointmentStatus,
         createPrescription,
         updateDoctor,
-        updateClinic
+        addDoctor,
+        deleteDoctor,
+        updateClinic,
+        addClinic,
+        deleteClinic
       }}
     >
       {children}

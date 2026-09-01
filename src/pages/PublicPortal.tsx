@@ -12,13 +12,15 @@ import {
   Baby,
   Activity,
   Sparkle,
+  Sparkles,
   Award,
   Search,
   Stethoscope,
   PhoneCall,
   FileText,
   CheckCircle,
-  ChevronRight
+  ChevronRight,
+  ShieldAlert
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -26,19 +28,13 @@ export const PublicPortal: React.FC = () => {
   const { 
     clinics, 
     doctors, 
-    appointments, 
     healthPackages, 
     healthBlogs, 
-    openBookingModal, 
+    openBookingModal,
+    openDoctorProfileModal, 
     language, 
     activeBranchId 
   } = useApp();
-
-  // Floating Hero Booking Widget State
-  const [heroMode, setHeroMode] = useState<'IN_CLINIC' | 'VIDEO'>('IN_CLINIC');
-  const [heroBranch, setHeroBranch] = useState<string>('sarangpur');
-  const [heroSpecialty, setHeroSpecialty] = useState<string>('all');
-  const [heroDoctorId, setHeroDoctorId] = useState<string>('');
 
   // Filtering State
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('all');
@@ -60,11 +56,6 @@ export const PublicPortal: React.FC = () => {
     const matchesSearch = !searchQuery || doc.name.toLowerCase().includes(searchQuery.toLowerCase()) || doc.specialization.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesBranch && matchesSpecialty && matchesSearch;
   });
-
-  const handleHeroSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    openBookingModal(heroDoctorId || undefined, heroBranch || undefined);
-  };
 
   const faqs = [
     {
@@ -94,193 +85,124 @@ export const PublicPortal: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-20 pb-28">
+    <div className="pb-16">
       
-      {/* 1. LIVE MARQUEE QUEUE TICKER */}
-      <div className="bg-[#0B2545] text-white py-2.5 border-b border-emerald-500/30 overflow-hidden relative shadow-md">
-        <div className="flex items-center whitespace-nowrap animate-marquee gap-8 text-xs font-mono">
-          <span className="font-extrabold text-amber-300 flex items-center gap-1.5 shrink-0 px-4">
+      {/* 1. CLINIC FACILITIES & KEY HIGHLIGHTS MARQUEE RIBBON */}
+      <div className="bg-gradient-to-r from-[#0B2545] via-[#0F4C81] to-[#0A365C] text-white py-2 border-b border-emerald-500/30 overflow-hidden relative shadow-md">
+        <div className="flex items-center whitespace-nowrap animate-marquee gap-8 text-xs">
+          <span className="font-black text-amber-300 flex items-center gap-2 shrink-0 px-4 uppercase tracking-wider bg-amber-400/10 py-1 rounded-full border border-amber-400/20">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-            LIVE OPD QUEUE TICKER:
+            SEVASADAN CLINIC HIGHLIGHTS & FACILITIES:
           </span>
-          {appointments.map(a => (
-            <span key={a.id} className="inline-flex items-center gap-2 bg-slate-800/90 px-3.5 py-1 rounded-full border border-slate-700">
-              <strong className="text-emerald-400 font-bold">{a.tokenNumber}</strong>
-              <span className="text-slate-200">{a.patientName}</span>
-              <span className="text-slate-400">({a.doctorName})</span>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-black uppercase tracking-wider">{a.status}</span>
-            </span>
-          ))}
+
+          <span className="inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1 rounded-full border border-white/10 font-medium text-slate-200">
+            <ShieldAlert className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+            <strong className="text-rose-300 font-extrabold">24x7 Emergency & ICU:</strong>
+            <span>ACLS Ambulance Helpline: 1800-SEVA-CLINIC</span>
+          </span>
+
+          <span className="inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1 rounded-full border border-white/10 font-medium text-slate-200">
+            <FileText className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+            <strong className="text-sky-300 font-extrabold">High-Tech Pathology Lab:</strong>
+            <span>Automated Testing & Doorstep WhatsApp PDF Reports</span>
+          </span>
+
+          <span className="inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1 rounded-full border border-white/10 font-medium text-slate-200">
+            <Award className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <strong className="text-amber-300 font-extrabold">NABH Accredited OPD:</strong>
+            <span>Sarangpur • Shujalpur • Rajgarh Multi-Specialty Network</span>
+          </span>
+
+          <span className="inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1 rounded-full border border-white/10 font-medium text-slate-200">
+            <Stethoscope className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <strong className="text-emerald-300 font-extrabold">15+ Board Doctors:</strong>
+            <span>General Medicine, Pediatrics, Ortho, Derm, Cardio & Gynae</span>
+          </span>
+
+          <span className="inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1 rounded-full border border-white/10 font-medium text-slate-200">
+            <Video className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+            <strong className="text-teal-200 font-extrabold">Digital Video Tele-OPD:</strong>
+            <span>Consult Doctors Online with Verified Digital Prescriptions</span>
+          </span>
+
+          <span className="inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1 rounded-full border border-white/10 font-medium text-slate-200">
+            <Activity className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <strong className="text-purple-300 font-extrabold">Modular Clean-Air OTs:</strong>
+            <span>HEPA Filtered Surgical Suites & Joint Replacement</span>
+          </span>
+
+          <span className="inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1 rounded-full border border-white/10 font-medium text-slate-200">
+            <Building2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <strong className="text-emerald-300 font-extrabold">24/7 Pharmacy & Cold-Chain:</strong>
+            <span>100% Certified Genuine Medicines & Vaccines</span>
+          </span>
+
+          <span className="inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1 rounded-full border border-white/10 font-medium text-slate-200">
+            <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <strong className="text-amber-300 font-extrabold">Live Token Queue Tracking:</strong>
+            <span>Track OPD Tokens Real-Time from Mobile</span>
+          </span>
         </div>
       </div>
 
       {/* 2. HERO SECTION WITH MOTHERHOOD STYLE QUICK BOOKING WIDGET */}
-      <section className="relative bg-gradient-to-br from-[#0B2545] via-[#0F4C81] to-slate-950 text-white pt-10 pb-28 rounded-b-[3rem] shadow-2xl overflow-hidden">
-        {/* Glow Effects */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#10B981]/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[#0F4C81]/40 rounded-full blur-3xl pointer-events-none" />
+      <section className="relative bg-gradient-to-br from-[#0B2545] via-[#0F4C81] to-slate-950 text-white pt-6 pb-28 rounded-b-[2.5rem] shadow-2xl overflow-hidden">
+        {/* Ambient Glow & Grid Accents */}
+        <div className="absolute top-0 right-0 w-[650px] h-[650px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[650px] h-[650px] bg-[#0F4C81]/30 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
           {/* Hero Banner Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             
-            {/* Left Content */}
+            {/* Left Content Column */}
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
               
-              <div className="inline-flex items-center gap-2 bg-emerald-400/10 border border-emerald-400/30 text-emerald-300 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider">
-                <Award className="w-4 h-4 text-amber-300" />
-                <span>{language === 'en' ? 'NABH Accredited Multi-Specialty Network' : 'एनएबीएच मान्यता प्राप्त बहुविशेषज्ञता नेटवर्क'}</span>
-              </div>
-
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12]">
+              {/* Main Headline */}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.15]">
                 {language === 'en' ? (
                   <>
                     India’s Trusted Clinic & <br className="hidden sm:block" />
-                    <span className="bg-gradient-to-r from-emerald-400 via-teal-200 to-amber-300 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
                       Virtual Telemedicine Hospital
                     </span>
                   </>
                 ) : (
                   <>
                     मध्य प्रदेश का विश्वसनीय क्लीनिक एवं <br className="hidden sm:block" />
-                    <span className="bg-gradient-to-r from-emerald-400 via-teal-200 to-amber-300 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
                       डिजिटल वीडियो ओपीडी नेटवर्क
                     </span>
                   </>
                 )}
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed font-medium">
+              {/* Professional Subheading */}
+              <p className="text-lg sm:text-xl text-slate-200/90 max-w-xl leading-relaxed font-normal">
                 {language === 'en'
-                  ? 'Providing world-class medical care across physical branches in Sarangpur, Shujalpur, and Rajgarh alongside instant virtual video OPDs. Automated tokens, digital Rx, and multi-gateway payments.'
-                  : 'सारंगपुर, शुजालपुर एवं राजगढ़ में अत्याधुनिक ओपीडी सेवाएं तथा घर बैठे डिजिटल वीडियो परामर्श।'}
+                  ? 'Providing world-class medical care across physical branches in Sarangpur, Shujalpur, and Rajgarh alongside 24/7 virtual OPD consultations.'
+                  : 'सारंगपुर, शुजालपुर एवं राजगढ़ में अत्याधुनिक चिकित्सा सेवाएं तथा 24/7 ऑनलाइन परामर्श।'}
               </p>
-
-              {/* Trust Metrics */}
-              <div className="pt-6 grid grid-cols-3 gap-4 border-t border-white/10 text-center sm:text-left">
-                <div>
-                  <p className="text-2xl sm:text-3xl font-black text-white">3 Branches</p>
-                  <p className="text-xs text-slate-300 font-semibold">Sarangpur • Shujalpur • Rajgarh</p>
-                </div>
-                <div>
-                  <p className="text-2xl sm:text-3xl font-black text-emerald-400">15+ Specialists</p>
-                  <p className="text-xs text-slate-300 font-semibold">Cardio, Ortho, Pediatrics, Derm</p>
-                </div>
-                <div>
-                  <p className="text-2xl sm:text-3xl font-black text-amber-300">50,000+</p>
-                  <p className="text-xs text-slate-300 font-semibold">Happy Patients Cured</p>
-                </div>
-              </div>
 
             </div>
 
-            {/* Right: FLOATING MOTHERHOOD STYLE QUICK APPOINTMENT WIDGET */}
-            <div className="lg:col-span-5">
-              <div className="bg-white text-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200/80 space-y-5">
-                <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-black text-lg text-[#0B2545] flex items-center gap-2">
-                      <Stethoscope className="w-5 h-5 text-[#0F4C81]" />
-                      <span>Book Appointment Fast</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 font-semibold">Select Mode & Reserve Slot Instantly</p>
-                  </div>
-                  <span className="bg-emerald-100 text-emerald-900 text-[10px] font-black px-2 py-0.5 rounded uppercase">
-                    Live Slots
-                  </span>
+            {/* Right Column: Hero Doctor Image */}
+            <div className="lg:col-span-5 flex justify-center lg:justify-end">
+              <div className="relative group max-w-md w-full">
+                {/* Decorative background glow */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-[2.5rem] blur-xl opacity-25 group-hover:opacity-40 transition duration-500" />
+                
+                {/* Image Container */}
+                <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/20 bg-slate-900/40 backdrop-blur-sm">
+                  <img
+                    src="/hero-doctor.png"
+                    alt="Sevasadan Specialist Doctor"
+                    className="w-full h-[450px] object-cover object-top transform group-hover:scale-105 transition-transform duration-700 ease-out"
+                  />
+                  {/* Subtle Gradient Overlay at bottom */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
                 </div>
-
-                <form onSubmit={handleHeroSubmit} className="space-y-4">
-                  
-                  {/* Mode Tabs */}
-                  <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-2xl">
-                    <button
-                      type="button"
-                      onClick={() => setHeroMode('IN_CLINIC')}
-                      className={`py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
-                        heroMode === 'IN_CLINIC' ? 'bg-[#0F4C81] text-white shadow-sm' : 'text-slate-700 hover:text-slate-900'
-                      }`}
-                    >
-                      <Building2 className="w-4 h-4" />
-                      <span>In-Clinic Token</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setHeroMode('VIDEO')}
-                      className={`py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
-                        heroMode === 'VIDEO' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-700 hover:text-slate-900'
-                      }`}
-                    >
-                      <Video className="w-4 h-4" />
-                      <span>Video Consult</span>
-                    </button>
-                  </div>
-
-                  {/* Branch Select (If In-Clinic) */}
-                  {heroMode === 'IN_CLINIC' && (
-                    <div>
-                      <label className="block text-[11px] font-extrabold text-slate-600 mb-1 uppercase tracking-wider">
-                        1. Select Clinic Branch
-                      </label>
-                      <select
-                        value={heroBranch}
-                        onChange={(e) => setHeroBranch(e.target.value)}
-                        className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                      >
-                        {clinics.map(c => (
-                          <option key={c.id} value={c.id}>{c.name} ({c.city})</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Department Select */}
-                  <div>
-                    <label className="block text-[11px] font-extrabold text-slate-600 mb-1 uppercase tracking-wider">
-                      2. Select Department / Specialty
-                    </label>
-                    <select
-                      value={heroSpecialty}
-                      onChange={(e) => setHeroSpecialty(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                    >
-                      <option value="all">All Departments & Specialties</option>
-                      <option value="General">General Physician & Diabetes</option>
-                      <option value="Pediatric">Pediatrics & Neonatology</option>
-                      <option value="Ortho">Orthopedics & Joint Surgery</option>
-                      <option value="Derm">Dermatology & Skin Care</option>
-                      <option value="Cardio">Cardiology & Heart Health</option>
-                    </select>
-                  </div>
-
-                  {/* Doctor Select */}
-                  <div>
-                    <label className="block text-[11px] font-extrabold text-slate-600 mb-1 uppercase tracking-wider">
-                      3. Select Preferred Doctor
-                    </label>
-                    <select
-                      value={heroDoctorId}
-                      onChange={(e) => setHeroDoctorId(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                    >
-                      <option value="">Any Available Specialist</option>
-                      {doctors.map(d => (
-                        <option key={d.id} value={d.id}>{d.name} ({d.specialization})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-[#0F4C81] via-[#0B2545] to-[#10B981] hover:opacity-95 text-white font-black py-4 rounded-2xl text-xs shadow-xl transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
-                  >
-                    <Calendar className="w-4 h-4 text-emerald-300" />
-                    <span>Reserve Token & Book Now</span>
-                  </button>
-
-                </form>
               </div>
             </div>
 
@@ -290,7 +212,7 @@ export const PublicPortal: React.FC = () => {
       </section>
 
       {/* 3. QUICK SERVICES ACTION GRID (MOTHERHOOD ICON BAR) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 relative z-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-20">
         <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
           
           <button
@@ -371,76 +293,165 @@ export const PublicPortal: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. HEALTH CHECKUP & PREVENTIVE PACKAGES (MOTHERHOOD STYLE) */}
-      <section id="packages-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pt-4">
-        <div className="text-center space-y-2">
-          <span className="text-xs font-black text-[#0F4C81] uppercase tracking-wider bg-[#0F4C81]/10 px-3.5 py-1 rounded-full">
-            Preventive Healthcare & Diagnostics
+      {/* 4. HEALTH CHECKUP & PREVENTIVE PACKAGES */}
+      <section id="packages-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 pt-8 pb-4">
+        <div className="text-center space-y-3">
+          <span className="inline-flex items-center gap-2 bg-gradient-to-r from-[#0F4C81]/10 via-emerald-500/10 to-teal-500/10 border border-[#0F4C81]/20 text-[#0F4C81] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+            <span>Preventive Healthcare & Diagnostics</span>
           </span>
-          <h2 className="text-2xl sm:text-4xl font-black text-slate-900">
-            SEVASADAN Comprehensive Health Packages
+          <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
+            SEVASADAN <span className="bg-gradient-to-r from-[#0F4C81] via-teal-700 to-emerald-600 bg-clip-text text-transparent">Comprehensive Health Packages</span>
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto font-medium">
-            Affordable diagnostic screening packages with 1-click booking and doorstep sample collection support.
+          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto font-medium leading-relaxed">
+            Affordable NABL-standard diagnostic screening packages with doorstep sample collection support & instant WhatsApp PDF reports.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {healthPackages.map(pkg => (
-            <div 
-              key={pkg.id} 
-              className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-xl transition-all space-y-5 flex flex-col justify-between relative overflow-hidden"
-            >
-              {pkg.badge && (
-                <span className="absolute top-4 right-4 bg-emerald-500 text-slate-950 font-black text-[9px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  {pkg.badge}
-                </span>
-              )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-7">
+          {healthPackages.map(pkg => {
+            const isPopular = pkg.badge === 'MOST POPULAR';
+            const discountPercent = Math.round(((pkg.originalPrice - pkg.discountedPrice) / pkg.originalPrice) * 100);
 
-              <div className="space-y-4">
-                <div>
-                  <span className="text-[10px] font-black text-[#0F4C81] uppercase tracking-wider">{pkg.category}</span>
-                  <h3 className="font-black text-base text-slate-900 mt-1">{pkg.title}</h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed font-medium line-clamp-2">
-                    {pkg.description}
-                  </p>
-                </div>
+            return (
+              <div 
+                key={pkg.id} 
+                className={`group relative bg-white rounded-[2.2rem] border transition-all duration-300 flex flex-col justify-between overflow-hidden ${
+                  isPopular 
+                    ? 'border-emerald-500/60 shadow-xl shadow-emerald-950/10 ring-2 ring-emerald-500/30 scale-[1.02] lg:-translate-y-2' 
+                    : 'border-slate-200 shadow-md hover:shadow-2xl hover:border-slate-300 hover:-translate-y-1.5'
+                }`}
+              >
+                {/* Top Accent Gradient Bar */}
+                <div className={`h-2.5 w-full bg-gradient-to-r ${
+                  pkg.category === 'Cardiac' ? 'from-rose-500 to-amber-500' :
+                  pkg.category === 'Women Care' ? 'from-purple-500 to-pink-500' :
+                  pkg.category === 'Diabetes' ? 'from-sky-500 to-teal-500' :
+                  'from-emerald-500 via-teal-500 to-[#0F4C81]'
+                }`} />
 
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-2">
-                  <span className="text-[11px] font-extrabold text-slate-700 block">
-                    Key Tests Included ({pkg.testCount}+ Parameters):
-                  </span>
-                  <ul className="space-y-1">
-                    {pkg.testsIncluded.slice(0, 4).map((t, idx) => (
-                      <li key={idx} className="text-[11px] text-slate-600 flex items-center gap-1.5 font-medium">
-                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span className="truncate">{t}</span>
-                      </li>
-                    ))}
-                  </ul>
+                <div className="p-6 space-y-5 flex-1 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    {/* Category & Badge Header */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">
+                        {pkg.category}
+                      </span>
+                      {pkg.badge && (
+                        <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-xs flex items-center gap-1.5 ${
+                          isPopular 
+                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/30' 
+                            : 'bg-[#0F4C81] text-white'
+                        }`}>
+                          {isPopular && <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />}
+                          <span>{pkg.badge}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Title & Description */}
+                    <div>
+                      <h3 className="font-black text-lg text-slate-900 leading-snug group-hover:text-[#0F4C81] transition-colors">
+                        {pkg.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-2 leading-relaxed font-medium line-clamp-3">
+                        {pkg.description}
+                      </p>
+                    </div>
+
+                    {/* Included Tests Box */}
+                    <div className="bg-slate-50/90 p-4 rounded-2xl border border-slate-200/70 space-y-2.5">
+                      <div className="flex items-center justify-between text-[11px] font-black text-slate-800">
+                        <span>Key Tests Included</span>
+                        <span className="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-md font-bold text-[10px]">
+                          {pkg.testCount}+ Parameters
+                        </span>
+                      </div>
+                      <ul className="space-y-1.5">
+                        {pkg.testsIncluded.slice(0, 4).map((t, idx) => (
+                          <li key={idx} className="text-[11px] text-slate-600 flex items-center gap-2 font-medium">
+                            <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span className="truncate">{t}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Pricing & CTA */}
+                  <div className="pt-4 border-t border-slate-100 space-y-4">
+                    <div className="flex items-baseline justify-between">
+                      <div>
+                        <span className="text-[11px] text-slate-400 font-bold block">Screening Fee</span>
+                        <div className="flex items-baseline gap-2 mt-0.5">
+                          <span className="text-3xl font-black text-slate-900 tracking-tight">₹{pkg.discountedPrice}</span>
+                          <span className="text-xs text-slate-400 line-through font-semibold">₹{pkg.originalPrice}</span>
+                        </div>
+                      </div>
+                      <span className="bg-emerald-100 text-emerald-800 border border-emerald-300/60 font-black text-xs px-3 py-1 rounded-xl shadow-xs">
+                        {discountPercent}% OFF
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => openBookingModal()}
+                      className={`w-full font-black py-3.5 rounded-2xl text-xs shadow-lg transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
+                        isPopular 
+                          ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-[#0F4C81] hover:opacity-95 text-white shadow-emerald-500/25 hover:scale-[1.02]' 
+                          : 'bg-[#0F4C81] hover:bg-[#0A365C] text-white shadow-[#0F4C81]/20 hover:scale-[1.02]'
+                      }`}
+                    >
+                      <Calendar className="w-4 h-4 text-emerald-300" />
+                      <span>Book Health Package</span>
+                    </button>
+                  </div>
                 </div>
               </div>
+            );
+          })}
+        </div>
 
-              <div className="pt-2 border-t border-slate-100 space-y-3">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-slate-900">₹{pkg.discountedPrice}</span>
-                  <span className="text-xs text-slate-400 line-through">₹{pkg.originalPrice}</span>
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-                    Save {Math.round(((pkg.originalPrice - pkg.discountedPrice) / pkg.originalPrice) * 100)}%
-                  </span>
-                </div>
-
-                <button
-                  onClick={() => openBookingModal()}
-                  className="w-full bg-[#0F4C81] hover:bg-[#0A365C] text-white font-extrabold py-3 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5"
-                >
-                  <Calendar className="w-4 h-4 text-emerald-300" />
-                  <span>Book Health Package</span>
-                </button>
-              </div>
-
+        {/* Diagnostic Trust & Feature Highlights Ribbon */}
+        <div className="bg-gradient-to-r from-[#0B2545] via-[#0F4C81] to-[#0A365C] rounded-3xl p-6 text-white shadow-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 border border-white/10 mt-6">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/15 text-emerald-400">
+              <Building2 className="w-5 h-5" />
             </div>
-          ))}
+            <div>
+              <h4 className="font-black text-xs">Home Sample Pickup</h4>
+              <p className="text-[11px] text-slate-300">Free Phlebotomist Visit</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/15 text-sky-400">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-black text-xs">WhatsApp PDF Reports</h4>
+              <p className="text-[11px] text-slate-300">Delivered within 24 Hours</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/15 text-amber-400">
+              <Award className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-black text-xs">100% NABL Accredited</h4>
+              <p className="text-[11px] text-slate-300">Automated Testing Labs</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/15 text-teal-300">
+              <Stethoscope className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-black text-xs">Free Doctor Consult</h4>
+              <p className="text-[11px] text-slate-300">Report Review Included</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -635,10 +646,16 @@ export const PublicPortal: React.FC = () => {
 
               <div className="pt-2 flex items-center gap-2">
                 <button
+                  onClick={() => openDoctorProfileModal(doc)}
+                  className="px-3.5 py-3 rounded-xl border border-slate-200 text-[#0F4C81] hover:bg-[#0F4C81]/10 font-bold text-xs transition"
+                >
+                  Profile
+                </button>
+                <button
                   onClick={() => openBookingModal(doc.id, undefined)}
                   className="flex-1 bg-gradient-to-r from-[#0F4C81] to-[#10B981] hover:opacity-95 text-white font-black py-3 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5"
                 >
-                  <Calendar className="w-4 h-4" />
+                  <Calendar className="w-4 h-4 text-emerald-300" />
                   <span>Reserve Slot</span>
                 </button>
               </div>

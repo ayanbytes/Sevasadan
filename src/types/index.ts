@@ -39,6 +39,40 @@ export interface DoctorUser {
   totalReviews: number;
   experienceYears: number;
   role: 'DOCTOR';
+  awards?: string[];
+  languagesSpoken?: string[];
+  educationDetails?: string[];
+  clinicalInterests?: string[];
+  consultationsCount?: number;
+  satisfactionRate?: number;
+  opdScheduleSummary?: string;
+  phone?: string;
+}
+
+export interface SpecialtyDetail {
+  id: string;
+  nameEn: string;
+  nameHi: string;
+  category: string;
+  tagline: string;
+  iconName: string;
+  description: string;
+  conditionsTreated: string[];
+  proceduresAndTech: string[];
+  doctorIds: string[];
+  bannerUrl: string;
+}
+
+export interface FacilityItem {
+  id: string;
+  title: string;
+  titleHi: string;
+  category: 'Emergency & ICU' | 'Diagnostics & Imaging' | 'Surgery & OT' | 'Digital & Telehealth' | 'Patient Care & Amenities';
+  description: string;
+  iconName: string;
+  imageUrl: string;
+  availableBranches: string[];
+  highlights: string[];
 }
 
 export interface AdminUser {
@@ -61,12 +95,14 @@ export interface Clinic {
   pincode: string;
   coordinates: { lat: number; lng: number };
   phone: string;
+  emergencyPhone?: string;
   email: string;
   operatingHours: string;
   emergencyHelpline: string;
   activeDoctorCount: number;
   googleMapEmbedUrl: string;
   imageUrl: string;
+  slotDurationMinutes?: number;
 }
 
 export interface DoctorSchedule {
