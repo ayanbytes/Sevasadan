@@ -4,41 +4,39 @@ import {
   Video, 
   MapPin, 
   Phone, 
-  Clock, 
-  Star, 
-  Calendar, 
+  Clock,
+  Calendar,
   ChevronDown,
   HeartPulse,
   Baby,
   Activity,
   Sparkle,
-  Sparkles,
   Award,
-  Search,
   Stethoscope,
   PhoneCall,
   FileText,
-  CheckCircle,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Navigation
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
-export const PublicPortal: React.FC = () => {
+interface PublicPortalProps {
+  onNavigate?: (tab: string) => void;
+}
+
+export const PublicPortal: React.FC<PublicPortalProps> = ({ onNavigate }) => {
   const { 
     clinics, 
     doctors, 
-    healthPackages, 
     healthBlogs, 
     openBookingModal,
-    openDoctorProfileModal, 
-    language, 
-    activeBranchId 
+    setSelectedBlogId,
+    language
   } = useApp();
 
   // Filtering State
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   const specialtiesList = [
@@ -49,13 +47,6 @@ export const PublicPortal: React.FC = () => {
     { id: 'Derm', labelEn: 'Dermatology & Cosmetology', labelHi: 'त्वचा एवं सौंदर्य', icon: Sparkle, desc: 'Skin allergies, hair fall & cosmetics' },
     { id: 'Cardio', labelEn: 'Cardiology & Heart Health', labelHi: 'हृदय रोग विशेषज्ञ', icon: HeartPulse, desc: 'ECG, Echo & cardiac wellness' }
   ];
-
-  const filteredDoctors = doctors.filter(doc => {
-    const matchesBranch = activeBranchId === 'all' || doc.clinicsCovered.includes(activeBranchId);
-    const matchesSpecialty = selectedSpecialty === 'all' || doc.specialization.toLowerCase().includes(selectedSpecialty.toLowerCase());
-    const matchesSearch = !searchQuery || doc.name.toLowerCase().includes(searchQuery.toLowerCase()) || doc.specialization.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesBranch && matchesSpecialty && matchesSearch;
-  });
 
   const faqs = [
     {
@@ -85,10 +76,10 @@ export const PublicPortal: React.FC = () => {
   ];
 
   return (
-    <div className="pb-16">
+    <div className="pb-24 overflow-x-hidden w-full max-w-full">
       
       {/* 1. CLINIC FACILITIES & KEY HIGHLIGHTS MARQUEE RIBBON */}
-      <div className="bg-gradient-to-r from-[#0B2545] via-[#0F4C81] to-[#0A365C] text-white py-2 border-b border-emerald-500/30 overflow-hidden relative shadow-md">
+      <div className="bg-gradient-to-r from-[#0B2545] via-[#0F4C81] to-[#0A365C] text-white py-2.5 border-b border-emerald-500/30 overflow-hidden relative shadow-md">
         <div className="flex items-center whitespace-nowrap animate-marquee gap-8 text-xs">
           <span className="font-black text-amber-300 flex items-center gap-2 shrink-0 px-4 uppercase tracking-wider bg-amber-400/10 py-1 rounded-full border border-amber-400/20">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
@@ -145,49 +136,81 @@ export const PublicPortal: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. HERO SECTION WITH MOTHERHOOD STYLE QUICK BOOKING WIDGET */}
-      <section className="relative bg-gradient-to-br from-[#0B2545] via-[#0F4C81] to-slate-950 text-white pt-6 pb-28 rounded-b-[2.5rem] shadow-2xl overflow-hidden">
-        {/* Ambient Glow & Grid Accents */}
+      {/* 2. HERO SECTION — DR. ANKUR DESHWALI */}
+      <section className="relative bg-gradient-to-br from-[#0B2545] via-[#0F4C81] to-slate-950 text-white pt-10 sm:pt-14 pb-14 sm:pb-16 rounded-b-[2.5rem] shadow-2xl overflow-hidden">
+        {/* Ambient Glow & Background Lighting */}
         <div className="absolute top-0 right-0 w-[650px] h-[650px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[650px] h-[650px] bg-[#0F4C81]/30 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
-          {/* Hero Banner Grid */}
+          {/* Hero Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             
             {/* Left Content Column */}
-            <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+            <div className="lg:col-span-7 space-y-5 text-center lg:text-left">
               
-              {/* Main Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.15]">
-                {language === 'en' ? (
-                  <>
-                    India’s Trusted Clinic & <br className="hidden sm:block" />
-                    <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
-                      Virtual Telemedicine Hospital
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    मध्य प्रदेश का विश्वसनीय क्लीनिक एवं <br className="hidden sm:block" />
-                    <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
-                      डिजिटल वीडियो ओपीडी नेटवर्क
-                    </span>
-                  </>
-                )}
-              </h1>
+              {/* Eyebrow Label */}
+              <div className="inline-flex items-center gap-2 bg-emerald-400/15 border border-emerald-400/30 text-emerald-300 px-3.5 py-1 rounded-full text-[11px] font-black tracking-widest uppercase shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>PEDIATRIC SURGERY • NEONATAL SURGERY • GENERAL SURGERY</span>
+              </div>
 
-              {/* Professional Subheading */}
-              <p className="text-lg sm:text-xl text-slate-200/90 max-w-xl leading-relaxed font-normal">
-                {language === 'en'
-                  ? 'Providing world-class medical care across physical branches in Sarangpur, Shujalpur, and Rajgarh alongside 24/7 virtual OPD consultations.'
-                  : 'सारंगपुर, शुजालपुर एवं राजगढ़ में अत्याधुनिक चिकित्सा सेवाएं तथा 24/7 ऑनलाइन परामर्श।'}
+              {/* Main Heading & Subheading */}
+              <div className="space-y-1.5">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight text-white">
+                  Dr. Ankur Deshwali
+                </h1>
+                <p className="text-lg sm:text-xl font-bold bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
+                  Pediatric Surgeon | Neonatal Surgeon | General Surgeon
+                </p>
+              </div>
+
+              {/* Description */}
+              <p className="text-sm sm:text-base text-slate-200/90 max-w-2xl leading-relaxed font-normal">
+                Providing specialized surgical care for newborns, children, and adolescents, with expertise in pediatric surgical conditions, congenital anomalies, pediatric urology, laparoscopic surgery, and antenatal diagnosis and management.
               </p>
+
+              {/* Qualifications Badge */}
+              <div className="inline-flex items-center gap-2 bg-slate-900/80 px-4 py-2 rounded-xl border border-white/15 text-xs font-mono font-bold text-amber-300 shadow-sm">
+                <Award className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>MBBS | MS (General Surgery) | MCh (Pediatric Surgery)</span>
+              </div>
+
+              {/* Location Badge */}
+              <div className="flex items-center justify-center lg:justify-start gap-2 text-xs font-semibold text-slate-300 pt-0.5">
+                <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Civil Hospital, Sarangpur & District Hospital, Rajgarh, Madhya Pradesh</span>
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-3">
+                <button
+                  onClick={() => openBookingModal()}
+                  className="bg-[#10B981] hover:bg-emerald-500 text-slate-950 px-6 py-3.5 rounded-2xl text-xs font-black shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center gap-2 cursor-pointer hover:scale-105"
+                >
+                  <Calendar className="w-4 h-4 text-slate-950" />
+                  <span>Book a Consultation</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (onNavigate) onNavigate('specialties');
+                    else {
+                      const el = document.getElementById('branches-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-6 py-3.5 rounded-2xl text-xs font-black shadow-md backdrop-blur-md transition flex items-center gap-2 cursor-pointer hover:scale-105"
+                >
+                  <Stethoscope className="w-4 h-4 text-emerald-400" />
+                  <span>View Specialities</span>
+                </button>
+              </div>
 
             </div>
 
-            {/* Right Column: Hero Doctor Image */}
+            {/* Right Column: Doctor Image */}
             <div className="lg:col-span-5 flex justify-center lg:justify-end">
               <div className="relative group max-w-md w-full">
                 {/* Decorative background glow */}
@@ -197,11 +220,14 @@ export const PublicPortal: React.FC = () => {
                 <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/20 bg-slate-900/40 backdrop-blur-sm">
                   <img
                     src="/hero-doctor.png"
-                    alt="Sevasadan Specialist Doctor"
-                    className="w-full h-[450px] object-cover object-top transform group-hover:scale-105 transition-transform duration-700 ease-out"
+                    alt="Dr. Ankur Deshwali - Pediatric & Neonatal Surgeon"
+                    className="w-full h-[460px] object-cover object-top transform group-hover:scale-105 transition-transform duration-700 ease-out"
                   />
-                  {/* Subtle Gradient Overlay at bottom */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
+                  {/* Doctor Title Card Overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent p-5 text-white">
+                    <h3 className="font-black text-lg text-white">Dr. Ankur Deshwali</h3>
+                    <p className="text-xs text-emerald-300 font-bold">MCh Pediatric Surgery Specialist</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -211,9 +237,9 @@ export const PublicPortal: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. QUICK SERVICES ACTION GRID (MOTHERHOOD ICON BAR) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-20">
-        <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+      {/* 3. QUICK SERVICES ACTION GRID */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pt-6 pb-4">
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 text-center">
           
           <button
             onClick={() => openBookingModal(undefined, undefined)}
@@ -227,7 +253,7 @@ export const PublicPortal: React.FC = () => {
           </button>
 
           <button
-            onClick={() => openBookingModal(undefined, undefined)}
+            onClick={() => openBookingModal(undefined, undefined, 'VIDEO')}
             className="p-4 rounded-2xl hover:bg-emerald-50 transition border border-transparent hover:border-emerald-200 space-y-2 group"
           >
             <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
@@ -249,20 +275,6 @@ export const PublicPortal: React.FC = () => {
             </div>
             <h4 className="font-extrabold text-xs text-slate-900">Find Clinic Location</h4>
             <p className="text-[10px] text-slate-500 font-medium">Sarangpur, Shujalpur, Rajgarh</p>
-          </button>
-
-          <button
-            onClick={() => {
-              const el = document.getElementById('packages-section');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="p-4 rounded-2xl hover:bg-amber-50 transition border border-transparent hover:border-amber-200 space-y-2 group"
-          >
-            <div className="w-12 h-12 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-              <FileText className="w-6 h-6" />
-            </div>
-            <h4 className="font-extrabold text-xs text-slate-900">Health Packages</h4>
-            <p className="text-[10px] text-slate-500 font-medium">Full Body & Cardiac Checkup</p>
           </button>
 
           <button
@@ -293,180 +305,18 @@ export const PublicPortal: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. HEALTH CHECKUP & PREVENTIVE PACKAGES */}
-      <section id="packages-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 pt-8 pb-4">
-        <div className="text-center space-y-3">
-          <span className="inline-flex items-center gap-2 bg-gradient-to-r from-[#0F4C81]/10 via-emerald-500/10 to-teal-500/10 border border-[#0F4C81]/20 text-[#0F4C81] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
-            <span>Preventive Healthcare & Diagnostics</span>
-          </span>
-          <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
-            SEVASADAN <span className="bg-gradient-to-r from-[#0F4C81] via-teal-700 to-emerald-600 bg-clip-text text-transparent">Comprehensive Health Packages</span>
-          </h2>
-          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto font-medium leading-relaxed">
-            Affordable NABL-standard diagnostic screening packages with doorstep sample collection support & instant WhatsApp PDF reports.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-7">
-          {healthPackages.map(pkg => {
-            const isPopular = pkg.badge === 'MOST POPULAR';
-            const discountPercent = Math.round(((pkg.originalPrice - pkg.discountedPrice) / pkg.originalPrice) * 100);
-
-            return (
-              <div 
-                key={pkg.id} 
-                className={`group relative bg-white rounded-[2.2rem] border transition-all duration-300 flex flex-col justify-between overflow-hidden ${
-                  isPopular 
-                    ? 'border-emerald-500/60 shadow-xl shadow-emerald-950/10 ring-2 ring-emerald-500/30 scale-[1.02] lg:-translate-y-2' 
-                    : 'border-slate-200 shadow-md hover:shadow-2xl hover:border-slate-300 hover:-translate-y-1.5'
-                }`}
-              >
-                {/* Top Accent Gradient Bar */}
-                <div className={`h-2.5 w-full bg-gradient-to-r ${
-                  pkg.category === 'Cardiac' ? 'from-rose-500 to-amber-500' :
-                  pkg.category === 'Women Care' ? 'from-purple-500 to-pink-500' :
-                  pkg.category === 'Diabetes' ? 'from-sky-500 to-teal-500' :
-                  'from-emerald-500 via-teal-500 to-[#0F4C81]'
-                }`} />
-
-                <div className="p-6 space-y-5 flex-1 flex flex-col justify-between">
-                  <div className="space-y-4">
-                    {/* Category & Badge Header */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">
-                        {pkg.category}
-                      </span>
-                      {pkg.badge && (
-                        <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-xs flex items-center gap-1.5 ${
-                          isPopular 
-                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/30' 
-                            : 'bg-[#0F4C81] text-white'
-                        }`}>
-                          {isPopular && <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />}
-                          <span>{pkg.badge}</span>
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Title & Description */}
-                    <div>
-                      <h3 className="font-black text-lg text-slate-900 leading-snug group-hover:text-[#0F4C81] transition-colors">
-                        {pkg.title}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-2 leading-relaxed font-medium line-clamp-3">
-                        {pkg.description}
-                      </p>
-                    </div>
-
-                    {/* Included Tests Box */}
-                    <div className="bg-slate-50/90 p-4 rounded-2xl border border-slate-200/70 space-y-2.5">
-                      <div className="flex items-center justify-between text-[11px] font-black text-slate-800">
-                        <span>Key Tests Included</span>
-                        <span className="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-md font-bold text-[10px]">
-                          {pkg.testCount}+ Parameters
-                        </span>
-                      </div>
-                      <ul className="space-y-1.5">
-                        {pkg.testsIncluded.slice(0, 4).map((t, idx) => (
-                          <li key={idx} className="text-[11px] text-slate-600 flex items-center gap-2 font-medium">
-                            <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                            <span className="truncate">{t}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* Pricing & CTA */}
-                  <div className="pt-4 border-t border-slate-100 space-y-4">
-                    <div className="flex items-baseline justify-between">
-                      <div>
-                        <span className="text-[11px] text-slate-400 font-bold block">Screening Fee</span>
-                        <div className="flex items-baseline gap-2 mt-0.5">
-                          <span className="text-3xl font-black text-slate-900 tracking-tight">₹{pkg.discountedPrice}</span>
-                          <span className="text-xs text-slate-400 line-through font-semibold">₹{pkg.originalPrice}</span>
-                        </div>
-                      </div>
-                      <span className="bg-emerald-100 text-emerald-800 border border-emerald-300/60 font-black text-xs px-3 py-1 rounded-xl shadow-xs">
-                        {discountPercent}% OFF
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => openBookingModal()}
-                      className={`w-full font-black py-3.5 rounded-2xl text-xs shadow-lg transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
-                        isPopular 
-                          ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-[#0F4C81] hover:opacity-95 text-white shadow-emerald-500/25 hover:scale-[1.02]' 
-                          : 'bg-[#0F4C81] hover:bg-[#0A365C] text-white shadow-[#0F4C81]/20 hover:scale-[1.02]'
-                      }`}
-                    >
-                      <Calendar className="w-4 h-4 text-emerald-300" />
-                      <span>Book Health Package</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Diagnostic Trust & Feature Highlights Ribbon */}
-        <div className="bg-gradient-to-r from-[#0B2545] via-[#0F4C81] to-[#0A365C] rounded-3xl p-6 text-white shadow-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 border border-white/10 mt-6">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/15 text-emerald-400">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-black text-xs">Home Sample Pickup</h4>
-              <p className="text-[11px] text-slate-300">Free Phlebotomist Visit</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/15 text-sky-400">
-              <FileText className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-black text-xs">WhatsApp PDF Reports</h4>
-              <p className="text-[11px] text-slate-300">Delivered within 24 Hours</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/15 text-amber-400">
-              <Award className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-black text-xs">100% NABL Accredited</h4>
-              <p className="text-[11px] text-slate-300">Automated Testing Labs</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/15 text-teal-300">
-              <Stethoscope className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-black text-xs">Free Doctor Consult</h4>
-              <p className="text-[11px] text-slate-300">Report Review Included</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* 5. CENTERS OF EXCELLENCE / SPECIALTIES GRID */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="text-center space-y-2">
-          <span className="text-xs font-black text-[#0F4C81] uppercase tracking-wider bg-[#0F4C81]/10 px-3.5 py-1 rounded-full">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pt-10 sm:pt-14 pb-12 sm:pb-16">
+        <div className="text-center space-y-3 pb-2">
+          <span className="text-xs font-black text-[#0F4C81] uppercase tracking-wider bg-[#0F4C81]/10 px-4 py-1.5 rounded-full border border-[#0F4C81]/20">
             Clinical Departments
           </span>
-          <h2 className="text-2xl sm:text-4xl font-black text-slate-900">
+          <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
             Centers of Excellence & Specialty OPDs
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5 pt-2">
           {specialtiesList.map(sp => {
             const IconComp = sp.icon;
             const count = sp.id === 'all' 
@@ -502,8 +352,8 @@ export const PublicPortal: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. PHYSICAL CLINIC LOCATIONS (MOTHERHOOD BRANCH CARDS) */}
-      <section id="branches-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      {/* 6. PHYSICAL CLINIC LOCATIONS */}
+      <section id="branches-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 py-10 sm:py-14">
         <div className="text-center space-y-2">
           <span className="text-xs font-black text-[#0F4C81] uppercase tracking-wider bg-[#0F4C81]/10 px-3.5 py-1 rounded-full">
             Our Physical OPD Network
@@ -551,25 +401,23 @@ export const PublicPortal: React.FC = () => {
                     <Clock className="w-4 h-4 text-amber-600 shrink-0" />
                     <span className="font-semibold">{c.operatingHours}</span>
                   </div>
-
-                  <div className="pt-1">
-                    <iframe
-                      title={`${c.name} Map`}
-                      src={c.googleMapEmbedUrl}
-                      className="w-full h-32 rounded-2xl border border-slate-200"
-                      loading="lazy"
-                    />
-                  </div>
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">
-                  {c.activeDoctorCount} Doctors On Duty
-                </span>
+              <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.name} ${c.address}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-[#0F4C81] border border-slate-200 font-extrabold px-3.5 py-2 rounded-xl text-xs shadow-2xs transition"
+                >
+                  <Navigation className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Get Directions</span>
+                </a>
+
                 <button
                   onClick={() => openBookingModal(undefined, c.id)}
-                  className="bg-[#0F4C81] hover:bg-[#0A365C] text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-xs transition"
+                  className="bg-[#0F4C81] hover:bg-[#0A365C] text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-xs transition cursor-pointer"
                 >
                   Book Token
                 </button>
@@ -579,93 +427,10 @@ export const PublicPortal: React.FC = () => {
         </div>
       </section>
 
-      {/* 7. DOCTOR DIRECTORY SHOWCASE */}
-      <section id="doctors-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div className="space-y-1">
-            <span className="text-xs font-black text-emerald-700 uppercase tracking-wider bg-emerald-100 px-3.5 py-1 rounded-full">
-              Board-Certified Medical Specialists
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-black text-slate-900">
-              Meet Our Senior Doctors
-            </h2>
-          </div>
-
-          <div className="relative w-full md:w-72">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search doctor or specialty..."
-              className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDoctors.map(doc => (
-            <div 
-              key={doc.id}
-              className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-xl transition-all space-y-4 flex flex-col justify-between"
-            >
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <img 
-                    src={doc.avatarUrl} 
-                    alt={doc.name} 
-                    className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-100 shadow-md"
-                  />
-                  <div>
-                    <div className="flex items-center gap-1 text-amber-500 font-bold text-xs">
-                      <Star className="w-3.5 h-3.5 fill-amber-400" />
-                      <span>{doc.rating}</span>
-                      <span className="text-slate-400 font-normal">({doc.totalReviews})</span>
-                    </div>
-                    <h4 className="font-black text-base text-slate-900 mt-0.5">{doc.name}</h4>
-                    <p className="text-xs text-[#0F4C81] font-extrabold">{doc.specialization}</p>
-                    <p className="text-[11px] text-slate-500 font-medium">{doc.qualification}</p>
-                  </div>
-                </div>
-
-                <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed font-medium">
-                  {doc.bio}
-                </p>
-
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-xs space-y-1.5">
-                  <p className="flex justify-between text-slate-600">
-                    <span>In-Clinic OPD Fee:</span>
-                    <strong className="text-slate-900 font-black">₹{doc.consultationFeeClinic}</strong>
-                  </p>
-                  <p className="flex justify-between text-slate-600">
-                    <span>Video Consultation Fee:</span>
-                    <strong className="text-emerald-700 font-black">₹{doc.consultationFeeOnline}</strong>
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-2 flex items-center gap-2">
-                <button
-                  onClick={() => openDoctorProfileModal(doc)}
-                  className="px-3.5 py-3 rounded-xl border border-slate-200 text-[#0F4C81] hover:bg-[#0F4C81]/10 font-bold text-xs transition"
-                >
-                  Profile
-                </button>
-                <button
-                  onClick={() => openBookingModal(doc.id, undefined)}
-                  className="flex-1 bg-gradient-to-r from-[#0F4C81] to-[#10B981] hover:opacity-95 text-white font-black py-3 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5"
-                >
-                  <Calendar className="w-4 h-4 text-emerald-300" />
-                  <span>Reserve Slot</span>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* 7. DOCTOR DIRECTORY SHOWCASE REMOVED */}
 
       {/* 8. HEALTH BLOGS & ARTICLES */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 py-10 sm:py-14">
         <div className="text-center space-y-2">
           <span className="text-xs font-black text-[#0F4C81] uppercase tracking-wider bg-[#0F4C81]/10 px-3.5 py-1 rounded-full">
             Health Knowledge Hub
@@ -679,7 +444,11 @@ export const PublicPortal: React.FC = () => {
           {healthBlogs.map(blog => (
             <div 
               key={blog.id}
-              className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition space-y-4 flex flex-col justify-between"
+              onClick={() => {
+                setSelectedBlogId(blog.id);
+                if (onNavigate) onNavigate('article-detail');
+              }}
+              className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition space-y-4 flex flex-col justify-between cursor-pointer group"
             >
               <div>
                 <div className="h-44 overflow-hidden relative">
@@ -714,7 +483,7 @@ export const PublicPortal: React.FC = () => {
       </section>
 
       {/* 9. FAQS ACCORDION */}
-      <section className="max-w-4xl mx-auto px-4 space-y-6">
+      <section className="max-w-4xl mx-auto px-4 space-y-6 py-10 sm:py-14">
         <div className="text-center space-y-1">
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900">Frequently Asked Questions</h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">Everything you need to know about SEVASADAN clinics & telehealth.</p>

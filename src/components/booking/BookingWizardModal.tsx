@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   Building2, 
@@ -8,13 +8,27 @@ import {
   FileText, 
   ArrowRight, 
   ArrowLeft,
-  ShieldCheck,
-  Smartphone,
-  QrCode
+  UploadCloud,
+  Trash2,
+  Eye,
+  RefreshCw,
+  Download,
+  Lock,
+  FileCheck,
+  Image as ImageIcon
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useApp } from '../../context/AppContext';
-import type { AppointmentMode, PatientType, PaymentMethod, Appointment } from '../../types';
+import type { AppointmentMode, PatientType, Appointment } from '../../types';
+
+export interface UploadedDoc {
+  id: string;
+  name: string;
+  sizeFormatted: string;
+  type: string;
+  url: string;
+  uploadedAt: string;
+}
 
 export const BookingWizardModal: React.FC = () => {
   const { 
@@ -22,6 +36,7 @@ export const BookingWizardModal: React.FC = () => {
     closeBookingModal, 
     preselectedDoctorId, 
     preselectedClinicId, 
+    preselectedMode,
     clinics, 
     doctors, 
     currentUser,
@@ -45,13 +60,26 @@ export const BookingWizardModal: React.FC = () => {
   const [patientGender, setPatientGender] = useState<string>('Male');
   const [patientNotes, setPatientNotes] = useState<string>('');
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('UPI');
   
-  // Confirmation output
+  // Step 4: Uploaded Documents State
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedDoc[]>([]);
+  const [previewFile, setPreviewFile] = useState<UploadedDoc | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const replaceInputRef = useRef<HTMLInputElement | null>(null);
+  const [replaceTargetId, setReplaceTargetId] = useState<string | null>(null);
+
+  // Step 5: Dummy Razorpay / Cash Payment Choice State
+  const [paymentModeChoice, setPaymentModeChoice] = useState<'RAZORPAY' | 'CASH'>('RAZORPAY');
+  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
+  
+  // Step 6: Confirmation output
   const [createdAppointment, setCreatedAppointment] = useState<Appointment | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
+    if (preselectedMode) {
+      setAppointmentMode(preselectedMode);
+    }
+
     if (preselectedDoctorId) {
       setSelectedDoctorId(preselectedDoctorId);
       const doc = doctors.find(d => d.id === preselectedDoctorId);
@@ -71,7 +99,7 @@ export const BookingWizardModal: React.FC = () => {
       setPatientAge((currentUser as any).age || 40);
       setPatientGender((currentUser as any).gender || 'Male');
     }
-  }, [preselectedDoctorId, preselectedClinicId, isBookingModalOpen]);
+  }, [preselectedDoctorId, preselectedClinicId, preselectedMode, isBookingModalOpen]);
 
   if (!isBookingModalOpen) return null;
 
@@ -103,8 +131,70 @@ export const BookingWizardModal: React.FC = () => {
     setStep(prev => Math.max(1, prev - 1));
   };
 
+  // Document Upload Handlers
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newDocs: UploadedDoc[] = Array.from(files).map((file, idx) => {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      const sizeKB = Math.round(file.size / 1024);
+      const sizeFormatted = file.size >= 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+      const url = URL.createObjectURL(file);
+      return {
+        id: `doc-${Date.now()}-${idx}`,
+        name: file.name,
+        sizeFormatted,
+        type: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
+        url,
+        uploadedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+    });
+
+    setUploadedFiles(prev => [...prev, ...newDocs]);
+    e.target.value = '';
+  };
+
+  const handleRemoveFile = (id: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== id));
+    if (previewFile?.id === id) {
+      setPreviewFile(null);
+    }
+  };
+
+  const triggerReplace = (id: string) => {
+    setReplaceTargetId(id);
+    if (replaceInputRef.current) {
+      replaceInputRef.current.click();
+    }
+  };
+
+  const handleReplaceFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !replaceTargetId) return;
+
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    const sizeKB = Math.round(file.size / 1024);
+    const sizeFormatted = file.size >= 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+    const url = URL.createObjectURL(file);
+
+    setUploadedFiles(prev => prev.map(f => f.id === replaceTargetId ? {
+      id: f.id,
+      name: file.name,
+      sizeFormatted,
+      type: file.type || 'application/octet-stream',
+      url,
+      uploadedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    } : f));
+
+    setReplaceTargetId(null);
+    e.target.value = '';
+  };
+
+  // Dummy Razorpay Payment Trigger
   const handleConfirmBooking = () => {
-    setIsSubmitting(true);
+    setIsProcessingPayment(true);
+
     setTimeout(() => {
       const appt = bookAppointment({
         doctorId: selectedDoctorId,
@@ -114,31 +204,172 @@ export const BookingWizardModal: React.FC = () => {
         timeSlot,
         patientNotes,
         symptoms: selectedSymptoms,
-        paymentMethod,
+        paymentMethod: paymentModeChoice === 'CASH' ? 'CASH_AT_CLINIC' : 'RAZORPAY',
         patientType,
         patientName: patientName || 'Patient',
         patientAge,
         patientGender
       });
+
       setCreatedAppointment(appt);
-      setIsSubmitting(false);
-      setStep(6); // Step 6: Confirmation
+      setIsProcessingPayment(false);
+      setStep(6); // Step 6: Booking Confirmed
 
       // Trigger Confetti!
       try {
         confetti({
-          particleCount: 100,
+          particleCount: 120,
           spread: 80,
           origin: { y: 0.6 }
         });
       } catch (e) {}
-    }, 800);
+    }, 1800);
   };
 
   const resetAndClose = () => {
     setStep(1);
     setCreatedAppointment(null);
+    setUploadedFiles([]);
+    setPreviewFile(null);
     closeBookingModal();
+  };
+
+  // Download Token Pass Function
+  const downloadTokenPass = () => {
+    if (!createdAppointment) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 760;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Background Gradient
+    const grad = ctx.createLinearGradient(0, 0, 600, 760);
+    grad.addColorStop(0, '#0B2545');
+    grad.addColorStop(0.5, '#0F4C81');
+    grad.addColorStop(1, '#0A365C');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 600, 760);
+
+    // Border Frame
+    ctx.strokeStyle = '#10B981';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(15, 15, 570, 730);
+
+    // Header Title
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '900 26px sans-serif';
+    ctx.fillText('SEVASADAN CLINIC & TELE-OPD', 40, 65);
+
+    ctx.fillStyle = '#10B981';
+    ctx.font = '600 13px sans-serif';
+    ctx.fillText('SUPER SPECIALTY OPD & TELEHEALTH NETWORK', 40, 90);
+
+    // Horizontal Divider
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(40, 110);
+    ctx.lineTo(560, 110);
+    ctx.stroke();
+
+    // Token Pass Card Box
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.fillRect(40, 130, 520, 115);
+    ctx.strokeStyle = '#10B981';
+    ctx.strokeRect(40, 130, 520, 115);
+
+    ctx.fillStyle = '#A7F3D0';
+    ctx.font = '700 12px sans-serif';
+    ctx.fillText('APPOINTMENT TOKEN PASS NUMBER', 60, 160);
+
+    ctx.fillStyle = '#FDE047';
+    ctx.font = '900 40px monospace';
+    ctx.fillText(createdAppointment.tokenNumber, 60, 208);
+
+    ctx.fillStyle = '#10B981';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(createdAppointment.status.toUpperCase(), 420, 175);
+
+    // Patient & Doctor Information
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '600 12px sans-serif';
+    ctx.fillText('PATIENT NAME', 40, 280);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 18px sans-serif';
+    ctx.fillText(createdAppointment.patientName, 40, 305);
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '600 12px sans-serif';
+    ctx.fillText('DOCTOR NAME', 320, 280);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 18px sans-serif';
+    ctx.fillText(createdAppointment.doctorName, 320, 305);
+    ctx.fillStyle = '#38BDF8';
+    ctx.font = '500 12px sans-serif';
+    ctx.fillText(createdAppointment.doctorSpecialization, 320, 325);
+
+    // Appointment Schedule & Venue
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '600 12px sans-serif';
+    ctx.fillText('SCHEDULED DATE & TIME', 40, 365);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 16px sans-serif';
+    ctx.fillText(`${createdAppointment.appointmentDate} at ${createdAppointment.timeSlot}`, 40, 390);
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '600 12px sans-serif';
+    ctx.fillText('VENUE / BRANCH', 320, 365);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 16px sans-serif';
+    ctx.fillText(createdAppointment.clinicName, 320, 390);
+
+    // Payment Info
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '600 12px sans-serif';
+    ctx.fillText('PAYMENT METHOD & STATUS', 40, 440);
+    ctx.fillStyle = '#10B981';
+    ctx.font = '700 16px sans-serif';
+    ctx.fillText(`${createdAppointment.paymentMethod} — ${createdAppointment.paymentStatus}`, 40, 465);
+
+    // Attached Docs Summary
+    if (uploadedFiles.length > 0) {
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '600 12px sans-serif';
+      ctx.fillText('ATTACHED DOCUMENTS', 320, 440);
+      ctx.fillStyle = '#38BDF8';
+      ctx.font = '700 14px sans-serif';
+      ctx.fillText(`${uploadedFiles.length} Document(s) Uploaded`, 320, 465);
+    }
+
+    // Instructions Box
+    ctx.fillStyle = 'rgba(15, 76, 129, 0.4)';
+    ctx.fillRect(40, 500, 520, 150);
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.strokeRect(40, 500, 520, 150);
+
+    ctx.fillStyle = '#F8FAFC';
+    ctx.font = '700 13px sans-serif';
+    ctx.fillText('IMPORTANT PATIENT INSTRUCTIONS:', 60, 528);
+
+    ctx.fillStyle = '#CBD5E1';
+    ctx.font = '500 12px sans-serif';
+    ctx.fillText('1. Please report 15 minutes prior to your allocated token time slot.', 60, 555);
+    ctx.fillText('2. Present this token pass at the clinic reception or video lobby.', 60, 580);
+    ctx.fillText('3. 24x7 Helpline: 1800-SEVA-CLINIC (1800-7382-723)', 60, 605);
+    ctx.fillText('4. Address: Sarangpur | Shujalpur | Rajgarh Branches', 60, 630);
+
+    // Footer Branding
+    ctx.fillStyle = '#64748B';
+    ctx.font = '600 11px sans-serif';
+    ctx.fillText('SEVASADAN — Verified OPD & Digital Telemedicine Network', 140, 695);
+
+    // Trigger Download
+    const link = document.createElement('a');
+    link.download = `SEVASADAN_Token_${createdAppointment.tokenNumber}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
   };
 
   const feeAmount = appointmentMode === 'VIDEO' 
@@ -147,7 +378,17 @@ export const BookingWizardModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+      
+      {/* File Replace Hidden Input */}
+      <input 
+        type="file" 
+        ref={replaceInputRef} 
+        onChange={handleReplaceFile} 
+        className="hidden" 
+        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+      />
+
+      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] relative">
         
         {/* Header with Stepper Progress */}
         <div className="bg-gradient-to-r from-[#0B2545] via-[#0F4C81] to-[#0A365C] text-white p-6 shrink-0">
@@ -160,14 +401,14 @@ export const BookingWizardModal: React.FC = () => {
                 {step === 1 && (language === 'en' ? 'Select Booking Mode' : 'परामर्श प्रकार चुनें')}
                 {step === 2 && (language === 'en' ? 'Select Branch & Doctor' : 'शाखा एवं डॉक्टर चुनें')}
                 {step === 3 && (language === 'en' ? 'Date & Time Slot' : 'तारीख एवं समय का चयन')}
-                {step === 4 && (language === 'en' ? 'Medical Intake & Symptoms' : 'लक्षण एवं स्वास्थ्य जानकारी')}
-                {step === 5 && (language === 'en' ? 'Payment Gateway' : 'भुगतान विधि')}
+                {step === 4 && (language === 'en' ? 'Medical Intake & Upload Documents' : 'स्वास्थ्य विवरण एवं दस्तावेज़ अपलोड')}
+                {step === 5 && (language === 'en' ? 'Razorpay Payment Gateway' : 'रेजरपे पेमेंट गेटवे')}
                 {step === 6 && (language === 'en' ? 'Booking Confirmed!' : 'अपॉइंटमेंट की पुष्टि हो गई!')}
               </h3>
             </div>
             <button 
               onClick={resetAndClose}
-              className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition"
+              className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -279,7 +520,7 @@ export const BookingWizardModal: React.FC = () => {
                         key={c.id}
                         type="button"
                         onClick={() => setSelectedClinicId(c.id)}
-                        className={`p-3.5 rounded-2xl border text-left transition ${
+                        className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
                           selectedClinicId === c.id 
                             ? 'border-[#0F4C81] bg-[#0F4C81]/10 text-[#0F4C81] font-extrabold' 
                             : 'border-slate-200 hover:border-slate-300 text-slate-700 font-medium'
@@ -412,7 +653,7 @@ export const BookingWizardModal: React.FC = () => {
                       key={slot}
                       type="button"
                       onClick={() => setTimeSlot(slot)}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition ${
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition cursor-pointer ${
                         timeSlot === slot 
                           ? 'border-[#10B981] bg-[#10B981] text-slate-950 font-black shadow-sm' 
                           : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
@@ -426,9 +667,11 @@ export const BookingWizardModal: React.FC = () => {
             </div>
           )}
 
-          {/* STEP 4: Symptoms & Notes */}
+          {/* STEP 4: Medical Intake & Upload Documents */}
           {step === 4 && (
             <div className="space-y-6">
+              
+              {/* Symptoms */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Common Symptoms (Select all that apply)
@@ -439,7 +682,7 @@ export const BookingWizardModal: React.FC = () => {
                       key={sym}
                       type="button"
                       onClick={() => toggleSymptom(sym)}
-                      className={`text-xs px-3.5 py-1.5 rounded-xl border font-bold transition ${
+                      className={`text-xs px-3.5 py-1.5 rounded-xl border font-bold transition cursor-pointer ${
                         selectedSymptoms.includes(sym)
                           ? 'bg-[#0F4C81] text-white border-[#0F4C81]'
                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
@@ -451,6 +694,7 @@ export const BookingWizardModal: React.FC = () => {
                 </div>
               </div>
 
+              {/* Medical Concerns */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Medical Intake & Specific Concerns
@@ -464,99 +708,222 @@ export const BookingWizardModal: React.FC = () => {
                 />
               </div>
 
-              {/* Upload Report Mock */}
-              <div className="border-2 border-dashed border-slate-200 p-4 rounded-2xl text-center bg-slate-50">
-                <FileText className="w-6 h-6 text-slate-400 mx-auto mb-1" />
-                <p className="text-xs font-bold text-slate-700">Attach Lab Reports / Past Prescription (Optional)</p>
-                <p className="text-[10px] text-slate-500">PDF, JPG, PNG up to 10MB supported</p>
+              {/* STEP 4: UPLOAD DOCUMENTS FEATURE */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Upload Medical Documents & Reports (Optional)
+                  </label>
+                  <span className="text-[11px] font-bold text-[#0F4C81] bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
+                    {uploadedFiles.length} File(s) Attached
+                  </span>
+                </div>
+
+                {/* Upload Action Zone */}
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  multiple 
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  className="hidden"
+                />
+
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-[#0F4C81]/30 hover:border-[#0F4C81] p-5 rounded-2xl text-center bg-sky-50/40 hover:bg-sky-50/80 transition cursor-pointer group"
+                >
+                  <UploadCloud className="w-8 h-8 text-[#0F4C81] mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                  <p className="text-xs font-black text-slate-900">
+                    Click to Upload Medical Reports or Drag & Drop
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                    Upload Lab Reports, Past Prescriptions, X-Rays (PDF, JPG, PNG up to 10MB)
+                  </p>
+                  <button 
+                    type="button"
+                    className="mt-3 bg-[#0F4C81] text-white text-xs font-bold px-4 py-1.5 rounded-xl shadow-xs inline-flex items-center gap-1.5"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Choose Documents</span>
+                  </button>
+                </div>
+
+                {/* Uploaded File List */}
+                {uploadedFiles.length > 0 && (
+                  <div className="space-y-2.5 pt-2">
+                    <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Uploaded Documents Preview & Controls
+                    </p>
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {uploadedFiles.map((doc) => (
+                        <div 
+                          key={doc.id}
+                          className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center justify-between gap-3 hover:border-slate-300 transition"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 font-bold">
+                              {doc.name.endsWith('.pdf') ? <FileText className="w-5 h-5 text-rose-600" /> : <ImageIcon className="w-5 h-5 text-emerald-600" />}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-black text-slate-900 truncate">{doc.name}</p>
+                              <p className="text-[10px] text-slate-500 font-medium">
+                                {doc.sizeFormatted} • Uploaded at {doc.uploadedAt}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            {/* Preview Button */}
+                            <button
+                              type="button"
+                              onClick={() => setPreviewFile(doc)}
+                              className="p-1.5 text-slate-600 hover:text-[#0F4C81] hover:bg-sky-100 rounded-lg transition"
+                              title="Preview Document"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+
+                            {/* Replace Button */}
+                            <button
+                              type="button"
+                              onClick={() => triggerReplace(doc.id)}
+                              className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-amber-100 rounded-lg transition"
+                              title="Replace Document"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                            </button>
+
+                            {/* Remove Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFile(doc.id)}
+                              className="p-1.5 text-slate-600 hover:text-rose-600 hover:bg-rose-100 rounded-lg transition"
+                              title="Remove Document"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
               </div>
             </div>
           )}
 
-          {/* STEP 5: Payment Gateway Selection */}
+          {/* STEP 5: DUMMY RAZORPAY PAYMENT FRONTEND */}
           {step === 5 && (
-            <div className="space-y-6">
-              {/* Fee Summary */}
-              <div className="bg-[#0B2545] text-white p-5 rounded-2xl flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-slate-300">Consultation Fee</p>
-                  <p className="text-lg font-black">{currentDoctor?.name}</p>
-                  <p className="text-xs text-emerald-300">{appointmentMode === 'VIDEO' ? 'Virtual Video OPD' : `${currentClinic?.name}`}</p>
+            <div className="space-y-5">
+              
+              {/* Fee Summary Header */}
+              <div className="bg-gradient-to-r from-[#0C2340] via-[#0A2E5C] to-[#0D1F38] text-white p-5 rounded-3xl shadow-lg border border-blue-900/50 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-sky-500 text-slate-950 font-black px-2.5 py-1 rounded-md text-xs tracking-wider uppercase">
+                      RAZORPAY
+                    </div>
+                    <span className="text-xs text-slate-300 font-bold">Payment Gateway</span>
+                  </div>
+                  <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1">
+                    <Lock className="w-3 h-3" />
+                    <span>256-Bit SSL Secured</span>
+                  </span>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs text-slate-300">Total Payable</span>
-                  <p className="text-2xl font-black text-emerald-400">₹{feeAmount}</p>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] text-slate-300 uppercase tracking-wider font-bold">Merchant Name</p>
+                    <h4 className="text-base font-black text-white">SEVASADAN Super Specialty OPD</h4>
+                    <p className="text-xs text-sky-300">{appointmentMode === 'VIDEO' ? 'Virtual Video OPD Token' : `${currentClinic?.name}`}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] text-slate-300 uppercase tracking-wider font-bold">Amount Payable</p>
+                    <p className="text-3xl font-black text-emerald-400">₹{feeAmount}</p>
+                  </div>
                 </div>
               </div>
 
+              {/* Payment Mode Selection Cards */}
               <div className="space-y-3">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Choose Payment Gateway / Method
+                  Select Payment Option
                 </label>
 
-                {appointmentMode === 'VIDEO' && (
-                  <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs p-3.5 rounded-xl mb-3 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 shrink-0 text-amber-700" />
-                    <span className="font-semibold">Online payment is mandatory for video consultations to reserve room tokens.</span>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* UPI */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Option 1: Razorpay Online Payment */}
                   <div 
-                    onClick={() => setPaymentMethod('UPI')}
-                    className={`p-4 rounded-2xl border cursor-pointer flex items-center gap-3 ${
-                      paymentMethod === 'UPI' ? 'border-[#0F4C81] bg-sky-50 font-bold' : 'border-slate-200 bg-white'
+                    onClick={() => setPaymentModeChoice('RAZORPAY')}
+                    className={`cursor-pointer p-5 rounded-3xl border-2 transition-all relative flex flex-col justify-between ${
+                      paymentModeChoice === 'RAZORPAY' 
+                        ? 'border-[#0F4C81] bg-sky-50/70 shadow-md ring-2 ring-[#0F4C81]/20' 
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
-                    <Smartphone className="w-5 h-5 text-purple-600" />
-                    <div>
-                      <p className="text-xs font-extrabold text-slate-900">UPI / GooglePay / PhonePe</p>
-                      <p className="text-[10px] text-slate-500">Razorpay Direct Instant UPI</p>
-                    </div>
-                  </div>
-
-                  {/* CARD */}
-                  <div 
-                    onClick={() => setPaymentMethod('CARD')}
-                    className={`p-4 rounded-2xl border cursor-pointer flex items-center gap-3 ${
-                      paymentMethod === 'CARD' ? 'border-[#0F4C81] bg-sky-50 font-bold' : 'border-slate-200 bg-white'
-                    }`}
-                  >
-                    <CreditCard className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="text-xs font-extrabold text-slate-900">Debit / Credit Card</p>
-                      <p className="text-[10px] text-slate-500">Cashfree Gateway</p>
-                    </div>
-                  </div>
-
-                  {/* Cash at Clinic (Only for physical visit) */}
-                  {appointmentMode === 'IN_CLINIC' && (
-                    <div 
-                      onClick={() => setPaymentMethod('CASH_AT_CLINIC')}
-                      className={`p-4 rounded-2xl border cursor-pointer flex items-center gap-3 sm:col-span-2 ${
-                        paymentMethod === 'CASH_AT_CLINIC' ? 'border-[#10B981] bg-emerald-50 font-bold' : 'border-slate-200 bg-white'
-                      }`}
-                    >
-                      <Building2 className="w-5 h-5 text-emerald-700" />
+                    {paymentModeChoice === 'RAZORPAY' && (
+                      <span className="absolute top-4 right-4 bg-[#0F4C81] text-white p-1 rounded-full">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </span>
+                    )}
+                    <div className="space-y-3">
+                      <div className="w-10 h-10 bg-[#0C2340] text-[#38BDF8] font-black text-xs px-2.5 rounded-xl flex items-center justify-center tracking-wider">
+                        RAZORPAY
+                      </div>
                       <div>
-                        <p className="text-xs font-extrabold text-slate-900">Pay Cash at Clinic OPD Counter</p>
-                        <p className="text-[10px] text-slate-500">Generate token now & pay cash upon arrival</p>
+                        <h4 className="font-black text-base text-slate-900">Razorpay Online Payment</h4>
+                        <p className="text-xs text-slate-500 mt-1 leading-relaxed font-medium">
+                          Instant digital payment via Razorpay Gateway (UPI, Cards & Netbanking supported).
+                        </p>
                       </div>
                     </div>
-                  )}
+                    <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs font-bold text-[#0F4C81]">
+                      <span>Instant Digital Token</span>
+                      <span>₹{feeAmount}</span>
+                    </div>
+                  </div>
+
+                  {/* Option 2: Pay Cash at Clinic OPD */}
+                  <div 
+                    onClick={() => { if (appointmentMode === 'IN_CLINIC') setPaymentModeChoice('CASH'); }}
+                    className={`p-5 rounded-3xl border-2 transition-all relative flex flex-col justify-between ${
+                      appointmentMode === 'VIDEO' ? 'opacity-40 cursor-not-allowed border-slate-200 bg-slate-50' :
+                      paymentModeChoice === 'CASH' 
+                        ? 'border-emerald-600 bg-emerald-50/70 shadow-md ring-2 ring-emerald-600/20 cursor-pointer' 
+                        : 'border-slate-200 hover:border-slate-300 bg-white cursor-pointer'
+                    }`}
+                  >
+                    {paymentModeChoice === 'CASH' && (
+                      <span className="absolute top-4 right-4 bg-emerald-600 text-white p-1 rounded-full">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </span>
+                    )}
+                    <div className="space-y-3">
+                      <div className="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center">
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-base text-slate-900">Pay Cash at Clinic OPD</h4>
+                        <p className="text-xs text-slate-500 mt-1 leading-relaxed font-medium">
+                          Generate token now and pay cash at Sarangpur, Shujalpur or Rajgarh OPD counter.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs font-bold text-emerald-700">
+                      <span>Counter Verification</span>
+                      <span>Pay at Visit</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* QR Code Scanner Simulation for UPI */}
-                {paymentMethod === 'UPI' && (
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center space-y-2">
-                    <div className="w-24 h-24 bg-white p-2 border border-slate-300 rounded-xl mx-auto flex items-center justify-center">
-                      <QrCode className="w-20 h-20 text-slate-800" />
-                    </div>
-                    <p className="text-[11px] font-bold text-slate-700">Scan UPI QR Code with GooglePay / PhonePe / Paytm</p>
-                  </div>
+                {appointmentMode === 'VIDEO' && (
+                  <p className="text-[11px] text-amber-700 bg-amber-50 p-3 rounded-xl border border-amber-200 font-semibold">
+                    * Note: Online Razorpay payment is mandatory for Virtual Video Consultations to issue room links.
+                  </p>
                 )}
               </div>
+
             </div>
           )}
 
@@ -569,10 +936,10 @@ export const BookingWizardModal: React.FC = () => {
 
               <div>
                 <h4 className="font-black text-2xl text-slate-900">
-                  {language === 'en' ? 'Appointment Confirmed!' : 'अपॉइंटमेंट पक्की हो गई!'}
+                  {language === 'en' ? 'Booking Confirmed!' : 'अपॉइंटमेंट की पुष्टि हो गई!'}
                 </h4>
                 <p className="text-xs text-slate-500 mt-1">
-                  Confirmation token dispatched via SMS to <strong>+91 {createdAppointment.patientPhone}</strong>
+                  Confirmation token dispatched via SMS & WhatsApp to <strong>+91 {createdAppointment.patientPhone}</strong>
                 </p>
               </div>
 
@@ -607,6 +974,13 @@ export const BookingWizardModal: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Uploaded Files Summary on Ticket if any */}
+                {uploadedFiles.length > 0 && (
+                  <div className="pt-2 border-t border-white/10 text-xs text-sky-200 font-semibold">
+                    <span>Attached Reports: {uploadedFiles.map(f => f.name).join(', ')}</span>
+                  </div>
+                )}
+
                 {/* Direct Video Join Button if Video mode */}
                 {createdAppointment.appointmentMode === 'VIDEO' && (
                   <div className="pt-3 border-t border-white/10 flex items-center justify-between">
@@ -616,7 +990,7 @@ export const BookingWizardModal: React.FC = () => {
                     <a
                       href={`#/telemedicine?room=${createdAppointment.id}&token=${createdAppointment.roomJoinToken}`}
                       onClick={resetAndClose}
-                      className="bg-[#10B981] hover:bg-emerald-500 text-slate-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition"
+                      className="bg-[#10B981] hover:bg-emerald-500 text-slate-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer"
                     >
                       <Video className="w-4 h-4" />
                       <span>Enter Video Room</span>
@@ -625,10 +999,21 @@ export const BookingWizardModal: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex items-center justify-center gap-3">
+              {/* Action Buttons: Download Token & Done */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <button
+                  type="button"
+                  onClick={downloadTokenPass}
+                  className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-white font-black px-6 py-3 rounded-2xl text-xs shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Token Pass</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={resetAndClose}
-                  className="bg-slate-900 text-white font-black px-8 py-3 rounded-2xl text-xs hover:bg-slate-800 transition"
+                  className="w-full sm:w-auto bg-slate-900 text-white font-black px-8 py-3 rounded-2xl text-xs hover:bg-slate-800 transition cursor-pointer"
                 >
                   Done & Close
                 </button>
@@ -645,7 +1030,7 @@ export const BookingWizardModal: React.FC = () => {
               <button
                 type="button"
                 onClick={handlePrevStep}
-                className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg transition"
+                className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg transition cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back</span>
@@ -656,7 +1041,7 @@ export const BookingWizardModal: React.FC = () => {
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="flex items-center gap-1 bg-[#0F4C81] hover:bg-[#0A365C] text-white px-5 py-2.5 rounded-xl text-xs font-extrabold shadow-md transition"
+                className="flex items-center gap-1 bg-[#0F4C81] hover:bg-[#0A365C] text-white px-5 py-2.5 rounded-xl text-xs font-extrabold shadow-md transition cursor-pointer"
               >
                 <span>Continue</span>
                 <ArrowRight className="w-4 h-4" />
@@ -664,16 +1049,28 @@ export const BookingWizardModal: React.FC = () => {
             ) : (
               <button
                 type="button"
-                disabled={isSubmitting}
+                disabled={isProcessingPayment}
                 onClick={handleConfirmBooking}
-                className="flex items-center gap-1.5 bg-[#10B981] hover:bg-emerald-600 text-slate-950 px-6 py-2.5 rounded-xl text-xs font-black shadow-md transition"
+                className={`flex items-center gap-1.5 px-6 py-2.5 rounded-xl text-xs font-black shadow-md transition cursor-pointer ${
+                  paymentModeChoice === 'CASH' 
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                    : 'bg-[#10B981] hover:bg-emerald-600 text-slate-950'
+                }`}
               >
-                {isSubmitting ? (
-                  <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span>
+                {isProcessingPayment ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                    <span>Processing Booking...</span>
+                  </span>
+                ) : paymentModeChoice === 'CASH' ? (
+                  <>
+                    <Building2 className="w-4 h-4" />
+                    <span>Confirm Booking (Pay Cash at OPD)</span>
+                  </>
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4" />
-                    <span>Confirm & Pay ₹{feeAmount}</span>
+                    <span>Pay ₹{feeAmount} with Razorpay</span>
                   </>
                 )}
               </button>
@@ -682,6 +1079,56 @@ export const BookingWizardModal: React.FC = () => {
         )}
 
       </div>
+
+      {/* DOCUMENT PREVIEW MODAL OVERLAY */}
+      {previewFile && (
+        <div className="fixed inset-0 z-60 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full space-y-4 relative">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[#0F4C81]" />
+                <h4 className="font-extrabold text-sm text-slate-900 truncate">{previewFile.name}</h4>
+              </div>
+              <button 
+                onClick={() => setPreviewFile(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-slate-100 rounded-2xl p-4 min-h-[220px] flex items-center justify-center overflow-hidden">
+              {previewFile.type.startsWith('image/') ? (
+                <img src={previewFile.url} alt={previewFile.name} className="max-h-64 object-contain rounded-lg" />
+              ) : (
+                <div className="text-center space-y-2">
+                  <FileCheck className="w-12 h-12 text-[#0F4C81] mx-auto" />
+                  <p className="text-xs font-bold text-slate-800">{previewFile.name}</p>
+                  <p className="text-[11px] text-slate-500">PDF Document ({previewFile.sizeFormatted})</p>
+                  <a 
+                    href={previewFile.url} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="inline-block bg-[#0F4C81] text-white text-xs font-bold px-4 py-1.5 rounded-xl shadow-xs"
+                  >
+                    Open Document Link
+                  </a>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setPreviewFile(null)}
+                className="bg-slate-900 text-white text-xs font-bold px-5 py-2 rounded-xl"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

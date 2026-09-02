@@ -49,7 +49,8 @@ export const AdminDashboard: React.FC = () => {
     bio: 'Dedicated medical specialist with extensive clinical experience.',
     clinicsCovered: ['sarangpur', 'shujalpur', 'rajgarh'],
     languagesSpoken: ['Hindi', 'English'],
-    opdScheduleSummary: 'Mon-Sat: 09:00 AM - 02:00 PM'
+    opdScheduleSummary: 'Mon-Sat: 09:00 AM - 02:00 PM',
+    avatarUrl: '/hero-doctor.png'
   });
 
   // Branch Form Modal State
@@ -99,7 +100,8 @@ export const AdminDashboard: React.FC = () => {
         bio: doc.bio || '',
         clinicsCovered: doc.clinicsCovered || ['sarangpur'],
         languagesSpoken: doc.languagesSpoken || ['Hindi', 'English'],
-        opdScheduleSummary: doc.opdScheduleSummary || 'Mon-Sat: 09:00 AM - 02:00 PM'
+        opdScheduleSummary: doc.opdScheduleSummary || 'Mon-Sat: 09:00 AM - 02:00 PM',
+        avatarUrl: doc.avatarUrl || '/hero-doctor.png'
       });
     } else {
       setEditingDoctor(null);
@@ -114,7 +116,8 @@ export const AdminDashboard: React.FC = () => {
         bio: 'Board-certified medical specialist dedicated to compassionate patient care.',
         clinicsCovered: ['sarangpur', 'shujalpur'],
         languagesSpoken: ['Hindi', 'English'],
-        opdScheduleSummary: 'Mon-Sat: 09:00 AM - 02:00 PM'
+        opdScheduleSummary: 'Mon-Sat: 09:00 AM - 02:00 PM',
+        avatarUrl: '/hero-doctor.png'
       });
     }
     setIsDoctorModalOpen(true);
@@ -148,7 +151,7 @@ export const AdminDashboard: React.FC = () => {
         clinicalInterests: [doctorFormData.specialization],
         consultationsCount: 150,
         satisfactionRate: 98,
-        avatarUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400'
+        avatarUrl: doctorFormData.avatarUrl || '/hero-doctor.png'
       });
     }
     setIsDoctorModalOpen(false);
@@ -835,6 +838,48 @@ export const AdminDashboard: React.FC = () => {
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-[#0F4C81] outline-none"
                   placeholder="Mon-Sat: 09:00 AM - 02:00 PM"
                 />
+              </div>
+
+              {/* Single Doctor Image Upload */}
+              <div className="space-y-1.5 pt-1">
+                <label className="block font-bold text-slate-700">Upload Doctor Profile Photo (Single Image)</label>
+                <div className="flex items-center gap-4 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                  {doctorFormData.avatarUrl ? (
+                    <div className="relative group w-16 h-16 shrink-0 rounded-2xl overflow-hidden border-2 border-[#0F4C81] shadow-xs">
+                      <img src={doctorFormData.avatarUrl} alt="Doctor Avatar Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setDoctorFormData({ ...doctorFormData, avatarUrl: '' })}
+                        className="absolute inset-0 bg-slate-950/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[10px] font-black cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-slate-200 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[11px] font-extrabold shrink-0">
+                      No Photo
+                    </div>
+                  )}
+
+                  <div className="space-y-1 grow">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setDoctorFormData({ ...doctorFormData, avatarUrl: reader.result as string });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-[#0F4C81] file:text-white hover:file:bg-[#0B2545] cursor-pointer"
+                    />
+                    <p className="text-[10px] text-slate-400 font-medium">Select a single JPG or PNG photo. Uploading a new image automatically replaces the current one.</p>
+                  </div>
+                </div>
               </div>
 
               <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">

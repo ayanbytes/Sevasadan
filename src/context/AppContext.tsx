@@ -10,7 +10,9 @@ import type {
   PaymentRecord,
   PatientUser,
   AppointmentStatus,
+  AppointmentMode,
   PatientType,
+  PaymentMethod,
   HealthPackage,
   HealthBlog
 } from '../types';
@@ -41,8 +43,13 @@ interface AppContextType {
   isBookingModalOpen: boolean;
   isDoctorProfileModalOpen: boolean;
   selectedDoctorForProfile: DoctorUser | null;
+  selectedBlogId: string | null;
+  setSelectedBlogId: (id: string | null) => void;
+  selectedSpecialtyFilter: string;
+  setSelectedSpecialtyFilter: (spec: string) => void;
   preselectedDoctorId?: string;
   preselectedClinicId?: string;
+  preselectedMode?: AppointmentMode;
   loginWithPhoneOtp: (phone: string, otp: string, role?: UserRole, name?: string) => Promise<{ user: AppUser; isNew: boolean }>;
   logout: () => void;
   switchRole: (role: UserRole) => void;
@@ -50,7 +57,7 @@ interface AppContextType {
   setActiveBranchId: (branchId: string) => void;
   openAuthModal: () => void;
   closeAuthModal: () => void;
-  openBookingModal: (doctorId?: string, clinicId?: string) => void;
+  openBookingModal: (doctorId?: string, clinicId?: string, mode?: AppointmentMode) => void;
   closeBookingModal: () => void;
   openDoctorProfileModal: (doctorOrId: DoctorUser | string) => void;
   closeDoctorProfileModal: () => void;
@@ -62,7 +69,7 @@ interface AppContextType {
     timeSlot: string;
     patientNotes?: string;
     symptoms?: string[];
-    paymentMethod: 'UPI' | 'CARD' | 'NETBANKING' | 'CASH_AT_CLINIC';
+    paymentMethod: PaymentMethod;
     patientType: PatientType;
     patientName?: string;
     patientAge?: number;
@@ -124,8 +131,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isBookingModalOpen, setIsBookingModalOpen] = useState<boolean>(false);
   const [isDoctorProfileModalOpen, setIsDoctorProfileModalOpen] = useState<boolean>(false);
   const [selectedDoctorForProfile, setSelectedDoctorForProfile] = useState<DoctorUser | null>(null);
+  const [selectedBlogId, setSelectedBlogId] = useState<string | null>(null);
+  const [selectedSpecialtyFilter, setSelectedSpecialtyFilter] = useState<string>('all');
   const [preselectedDoctorId, setPreselectedDoctorId] = useState<string | undefined>(undefined);
   const [preselectedClinicId, setPreselectedClinicId] = useState<string | undefined>(undefined);
+  const [preselectedMode, setPreselectedMode] = useState<AppointmentMode | undefined>(undefined);
 
   // Sync state to LocalStorage
   useEffect(() => {
@@ -251,15 +261,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openAuthModal = () => setIsAuthModalOpen(true);
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
-  const openBookingModal = (doctorId?: string, clinicId?: string) => {
+  const openBookingModal = (doctorId?: string, clinicId?: string, mode?: AppointmentMode) => {
     setPreselectedDoctorId(doctorId);
     setPreselectedClinicId(clinicId);
+    setPreselectedMode(mode);
     setIsBookingModalOpen(true);
   };
   const closeBookingModal = () => {
     setIsBookingModalOpen(false);
     setPreselectedDoctorId(undefined);
     setPreselectedClinicId(undefined);
+    setPreselectedMode(undefined);
   };
 
   const openDoctorProfileModal = (doctorOrId: DoctorUser | string) => {
@@ -285,7 +297,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     timeSlot: string;
     patientNotes?: string;
     symptoms?: string[];
-    paymentMethod: 'UPI' | 'CARD' | 'NETBANKING' | 'CASH_AT_CLINIC';
+    paymentMethod: PaymentMethod;
     patientType: PatientType;
     patientName?: string;
     patientAge?: number;
@@ -445,8 +457,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isBookingModalOpen,
         isDoctorProfileModalOpen,
         selectedDoctorForProfile,
+        selectedBlogId,
+        setSelectedBlogId,
+        selectedSpecialtyFilter,
+        setSelectedSpecialtyFilter,
         preselectedDoctorId,
         preselectedClinicId,
+        preselectedMode,
         loginWithPhoneOtp,
         logout,
         switchRole,

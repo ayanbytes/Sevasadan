@@ -11,9 +11,10 @@ import { useApp } from '../context/AppContext';
 import { FACILITIES_DATA } from '../data/mockData';
 
 export const LocationsFacilities: React.FC = () => {
-  const { clinics, openBookingModal } = useApp();
+  const { clinics, openBookingModal, activeBranchId, setActiveBranchId } = useApp();
   
-  const [selectedBranchId, setSelectedBranchId] = useState<string>('sarangpur');
+  const selectedBranchId = activeBranchId || 'sarangpur';
+  const setSelectedBranchId = (id: string) => setActiveBranchId(id);
   const [facilityCategory, setFacilityCategory] = useState<string>('all');
 
   const selectedClinic = clinics.find(c => c.id === selectedBranchId) || clinics[0];
@@ -146,23 +147,14 @@ export const LocationsFacilities: React.FC = () => {
                   <p className="text-xs font-black text-rose-700 font-mono">{selectedClinic.emergencyHelpline}</p>
                 </div>
               </div>
-
-              <div className="pt-2">
-                <iframe
-                  title={`${selectedClinic.name} Map Embed`}
-                  src={selectedClinic.googleMapEmbedUrl}
-                  className="w-full h-40 rounded-2xl border border-slate-200 shadow-2xs"
-                  loading="lazy"
-                />
-              </div>
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
               <a
-                href={`https://maps.google.com/?q=${encodeURIComponent(selectedClinic.address)}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedClinic.name} ${selectedClinic.address}`)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-4 py-3 rounded-xl text-xs flex items-center gap-1.5 transition"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-4 py-3 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer"
               >
                 <Navigation className="w-4 h-4 text-[#0F4C81]" />
                 <span>Get Directions</span>

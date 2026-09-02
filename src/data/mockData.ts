@@ -56,6 +56,30 @@ export const INITIAL_CLINICS: Clinic[] = [
 
 export const INITIAL_DOCTORS: DoctorUser[] = [
   {
+    id: 'doc-ankur',
+    userId: 'user-doc-ankur',
+    name: 'Dr. Ankur Deshwali',
+    qualification: 'MBBS | MS (General Surgery) | MCh (Pediatric Surgery)',
+    specialization: 'Pediatric Surgeon | Neonatal Surgeon | General Surgeon',
+    regNumber: 'MP-52140/2016',
+    bio: 'Class-I Gazetted Surgical Specialist and 3× MPPSC selected surgeon with specialized expertise in newborn surgery, pediatric urology, congenital anomaly repair, and pediatric laparoscopic surgery.',
+    avatarUrl: '/hero-doctor.png',
+    clinicsCovered: ['sarangpur', 'rajgarh', 'shujalpur'],
+    consultationFeeClinic: 400,
+    consultationFeeOnline: 500,
+    rating: 4.98,
+    totalReviews: 680,
+    experienceYears: 14,
+    role: 'DOCTOR',
+    awards: ['3× MPPSC Selected Specialist', 'Class-I Gazetted Surgical Specialist', 'Best Research Paper Award (Pediatric Surgery)'],
+    languagesSpoken: ['English', 'Hindi'],
+    educationDetails: ['MCh Pediatric Surgery', 'MS General Surgery', 'MBBS'],
+    clinicalInterests: ['Neonatal Surgery', 'Pediatric Urology', 'Congenital Anomalies', 'Laparoscopic Surgery', 'Antenatal Diagnosis'],
+    consultationsCount: 16500,
+    satisfactionRate: 99.2,
+    opdScheduleSummary: 'Civil Hospital Sarangpur & District Hospital Rajgarh: Mon to Sat'
+  },
+  {
     id: 'doc-rajesh',
     userId: 'user-doc-1',
     name: 'Dr. Rajesh Sharma',

@@ -11,7 +11,7 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ setCurrentTab }) => {
-  const { openBookingModal } = useApp();
+  const { openBookingModal, setSelectedSpecialtyFilter } = useApp();
 
   return (
     <footer className="bg-white text-slate-700 pt-12 pb-8 border-t border-slate-200 shadow-xs">
@@ -123,9 +123,6 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab }) => {
               <li>
                 <button onClick={() => setCurrentTab('specialties')} className="hover:text-[#0F4C81] transition cursor-pointer">NABH Accreditation</button>
               </li>
-              <li>
-                <button onClick={() => setCurrentTab('specialties')} className="hover:text-[#0F4C81] transition cursor-pointer">Health Checkup Packages</button>
-              </li>
             </ul>
           </div>
 
@@ -140,7 +137,7 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab }) => {
                 <button onClick={() => openBookingModal()} className="hover:text-[#0F4C81] transition cursor-pointer">Book Physical OPD Token</button>
               </li>
               <li>
-                <button onClick={() => openBookingModal()} className="hover:text-[#0F4C81] transition cursor-pointer">Book Video Consultation</button>
+                <button onClick={() => openBookingModal(undefined, undefined, 'VIDEO')} className="hover:text-[#0F4C81] transition cursor-pointer">Book Video Consultation</button>
               </li>
               <li>
                 <button onClick={() => setCurrentTab('locations')} className="hover:text-[#0F4C81] transition cursor-pointer">24/7 In-House Pharmacy</button>
@@ -153,41 +150,36 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab }) => {
             <h4 className="font-black text-slate-900 text-xs uppercase tracking-wider">Our Specialties</h4>
             <ul className="space-y-2 text-slate-600 font-medium">
               <li>
-                <button onClick={() => setCurrentTab('specialties')} className="hover:text-[#0F4C81] transition cursor-pointer">General Medicine & Diabetes</button>
+                <button onClick={() => { setSelectedSpecialtyFilter('Internal Medicine'); setCurrentTab('specialties'); }} className="hover:text-[#0F4C81] transition cursor-pointer text-left">General Medicine & Diabetes</button>
               </li>
               <li>
-                <button onClick={() => setCurrentTab('specialties')} className="hover:text-[#0F4C81] transition cursor-pointer">Pediatrics & Neonatology</button>
+                <button onClick={() => { setSelectedSpecialtyFilter('Child Health'); setCurrentTab('specialties'); }} className="hover:text-[#0F4C81] transition cursor-pointer text-left">Pediatrics & Neonatology</button>
               </li>
               <li>
-                <button onClick={() => setCurrentTab('specialties')} className="hover:text-[#0F4C81] transition cursor-pointer">Orthopedics & Joint Surgery</button>
+                <button onClick={() => { setSelectedSpecialtyFilter('Bone & Joint'); setCurrentTab('specialties'); }} className="hover:text-[#0F4C81] transition cursor-pointer text-left">Orthopedics & Joint Surgery</button>
               </li>
               <li>
-                <button onClick={() => setCurrentTab('specialties')} className="hover:text-[#0F4C81] transition cursor-pointer">Dermatology & Skin Care</button>
+                <button onClick={() => { setSelectedSpecialtyFilter('Skin & Hair'); setCurrentTab('specialties'); }} className="hover:text-[#0F4C81] transition cursor-pointer text-left">Dermatology & Skin Care</button>
               </li>
               <li>
-                <button onClick={() => setCurrentTab('specialties')} className="hover:text-[#0F4C81] transition cursor-pointer">Cardiology & Heart Care</button>
+                <button onClick={() => { setSelectedSpecialtyFilter('Cardiovascular'); setCurrentTab('specialties'); }} className="hover:text-[#0F4C81] transition cursor-pointer text-left">Cardiology & Heart Care</button>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Legal & Contact */}
+          {/* Column 4: Legal & Support */}
           <div className="space-y-3">
             <h4 className="font-black text-slate-900 text-xs uppercase tracking-wider">Legal & Support</h4>
             <ul className="space-y-2 text-slate-600 font-medium">
               <li>
-                <a href="#terms" onClick={(e) => { e.preventDefault(); alert('SEVASADAN Terms and Conditions: Standard OPD & Telemedicine Policy 2026.'); }} className="hover:text-[#0F4C81] transition">
-                  Terms and Conditions
-                </a>
+                <button onClick={() => setCurrentTab('terms')} className="hover:text-[#0F4C81] transition cursor-pointer text-left">
+                  Terms & Conditions
+                </button>
               </li>
               <li>
-                <a href="#privacy" onClick={(e) => { e.preventDefault(); alert('SEVASADAN Privacy Policy: Patient Health Data Protection compliant.'); }} className="hover:text-[#0F4C81] transition">
+                <button onClick={() => setCurrentTab('privacy')} className="hover:text-[#0F4C81] transition cursor-pointer text-left">
                   Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#tele-guidelines" onClick={(e) => { e.preventDefault(); alert('Telemedicine Practice Guidelines 2020 Compliant.'); }} className="hover:text-[#0F4C81] transition">
-                  Telemedicine Guidelines 2020
-                </a>
+                </button>
               </li>
             </ul>
 

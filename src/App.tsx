@@ -13,17 +13,24 @@ import { TelemedicineRoom } from './pages/TelemedicineRoom';
 import { PatientDashboard } from './pages/PatientDashboard';
 import { DoctorConsole } from './pages/DoctorConsole';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { ArticleDetail } from './pages/ArticleDetail';
+import { TermsConditions } from './pages/TermsConditions';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { DeskStaffPortal } from './pages/DeskStaffPortal';
 
 const getTabFromPath = (path: string): string => {
   const cleanPath = path.toLowerCase().replace(/\/$/, '');
-  if (cleanPath === '/adminp') return 'admin';
+  if (cleanPath === '/adminp' || cleanPath === '/admin') return 'admin';
+  if (cleanPath === '/doctor' || cleanPath === '/doctor-console') return 'doctor-console';
+  if (cleanPath === '/support' || cleanPath === '/desk-staff') return 'desk-staff-dashboard';
   if (cleanPath === '/about') return 'about';
   if (cleanPath === '/specialties') return 'specialties';
   if (cleanPath === '/locations') return 'locations';
   if (cleanPath === '/telemedicine') return 'telemedicine';
   if (cleanPath === '/doctors') return 'doctors';
   if (cleanPath === '/patient-dashboard') return 'patient-dashboard';
-  if (cleanPath === '/doctor-console') return 'doctor-console';
+  if (cleanPath === '/terms') return 'terms';
+  if (cleanPath === '/privacy') return 'privacy';
   return 'home';
 };
 
@@ -39,7 +46,7 @@ const MainContent: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'instant' });
     let newPath = '/';
     if (tab === 'admin') {
-      newPath = '/adminp';
+      newPath = '/admin';
       if (activeRole !== 'ADMIN') {
         switchRole('ADMIN');
       }
@@ -56,10 +63,19 @@ const MainContent: React.FC = () => {
     } else if (tab === 'patient-dashboard') {
       newPath = '/patient-dashboard';
     } else if (tab === 'doctor-console') {
-      newPath = '/doctor-console';
+      newPath = '/doctor';
       if (activeRole !== 'DOCTOR') {
         switchRole('DOCTOR');
       }
+    } else if (tab === 'desk-staff-dashboard') {
+      newPath = '/support';
+      if (activeRole !== 'DESK_STAFF') {
+        switchRole('DESK_STAFF');
+      }
+    } else if (tab === 'terms') {
+      newPath = '/terms';
+    } else if (tab === 'privacy') {
+      newPath = '/privacy';
     } else {
       newPath = '/';
     }
@@ -69,11 +85,15 @@ const MainContent: React.FC = () => {
     }
   };
 
-  // Synchronize role when initially loaded at /adminp
+  // Synchronize role when initially loaded at /admin, /doctor, /support
   useEffect(() => {
     const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
-    if (path === '/adminp') {
+    if (path === '/adminp' || path === '/admin') {
       switchRole('ADMIN');
+    } else if (path === '/doctor' || path === '/doctor-console') {
+      switchRole('DOCTOR');
+    } else if (path === '/support' || path === '/desk-staff') {
+      switchRole('DESK_STAFF');
     }
   }, []);
 
@@ -89,21 +109,25 @@ const MainContent: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased selection:bg-[#10B981] selection:text-slate-950">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased selection:bg-[#10B981] selection:text-slate-950 overflow-x-hidden w-full max-w-full">
       {/* Top Navbar */}
       <Navbar currentTab={currentTab} setCurrentTab={handleSetCurrentTab} />
 
       {/* Main View Router */}
-      <main className="grow">
-        {currentTab === 'home' && <PublicPortal />}
-        {currentTab === 'about' && <AboutUs />}
+      <main className="grow w-full max-w-full overflow-x-hidden">
+        {currentTab === 'home' && <PublicPortal onNavigate={handleSetCurrentTab} />}
+        {currentTab === 'about' && <AboutUs onNavigate={handleSetCurrentTab} />}
         {currentTab === 'specialties' && <Specialties />}
         {currentTab === 'locations' && <LocationsFacilities />}
-        {currentTab === 'doctors' && <PublicPortal />}
+        {currentTab === 'doctors' && <PublicPortal onNavigate={handleSetCurrentTab} />}
         {currentTab === 'telemedicine' && <TelemedicineRoom />}
         {currentTab === 'patient-dashboard' && <PatientDashboard />}
         {currentTab === 'doctor-console' && <DoctorConsole />}
+        {currentTab === 'desk-staff-dashboard' && <DeskStaffPortal />}
         {currentTab === 'admin' && <AdminDashboard />}
+        {currentTab === 'article-detail' && <ArticleDetail onBack={() => handleSetCurrentTab('home')} />}
+        {currentTab === 'terms' && <TermsConditions onBack={() => handleSetCurrentTab('home')} />}
+        {currentTab === 'privacy' && <PrivacyPolicy onBack={() => handleSetCurrentTab('home')} />}
       </main>
 
       {/* Footer */}

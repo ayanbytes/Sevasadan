@@ -11,10 +11,16 @@ import { useApp } from '../context/AppContext';
 import { SPECIALTIES_DATA } from '../data/mockData';
 
 export const Specialties: React.FC = () => {
-  const { doctors, openBookingModal, openDoctorProfileModal, language } = useApp();
+  const { doctors, openBookingModal, openDoctorProfileModal, language, selectedSpecialtyFilter } = useApp();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(selectedSpecialtyFilter || 'all');
+
+  React.useEffect(() => {
+    if (selectedSpecialtyFilter) {
+      setSelectedCategory(selectedSpecialtyFilter);
+    }
+  }, [selectedSpecialtyFilter]);
 
   const categories = [
     { id: 'all', label: 'All Specialties' },
@@ -60,15 +66,17 @@ export const Specialties: React.FC = () => {
             Explore our board-certified departments, advanced diagnostic protocols, specialized treatments, and senior medical experts across Sarangpur, Shujalpur, and Rajgarh.
           </p>
 
-          {/* Search Box */}
-          <div className="pt-4 max-w-md mx-auto relative">
-            <Search className="w-5 h-5 absolute left-4 top-3.5 text-slate-400" />
+          {/* Search Box with Perfect Centered Icon Alignment */}
+          <div className="pt-4 max-w-md mx-auto relative flex items-center">
+            <div className="absolute left-4 flex items-center justify-center pointer-events-none">
+              <Search className="w-4.5 h-4.5 text-slate-400" />
+            </div>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search specialty, condition or treatment..."
-              className="w-full pl-12 pr-4 py-3.5 bg-white/95 text-slate-900 placeholder:text-slate-500 rounded-2xl text-xs font-bold shadow-xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              className="w-full pl-11 pr-4 py-3.5 bg-white/95 text-slate-900 placeholder:text-slate-500 rounded-2xl text-xs font-bold shadow-xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-emerald-400"
             />
           </div>
 

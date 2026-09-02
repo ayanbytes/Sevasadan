@@ -1,9 +1,9 @@
-export type UserRole = 'PATIENT' | 'DOCTOR' | 'ADMIN';
+export type UserRole = 'PATIENT' | 'DOCTOR' | 'DESK_STAFF' | 'ADMIN';
 export type PatientType = 'NEW' | 'EXISTING' | 'FOLLOW_UP';
 export type AppointmentMode = 'IN_CLINIC' | 'VIDEO';
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
-export type PaymentMethod = 'UPI' | 'CARD' | 'NETBANKING' | 'CASH_AT_CLINIC';
+export type PaymentMethod = 'UPI' | 'CARD' | 'NETBANKING' | 'CASH_AT_CLINIC' | 'RAZORPAY';
 export type PaymentGateway = 'RAZORPAY' | 'CASHFREE' | 'OFFLINE';
 export type MealTiming = 'BEFORE_MEAL' | 'AFTER_MEAL' | 'WITH_MEAL' | 'ANYTIME';
 export type Language = 'en' | 'hi';
@@ -103,6 +103,8 @@ export interface Clinic {
   googleMapEmbedUrl: string;
   imageUrl: string;
   slotDurationMinutes?: number;
+  status?: 'ACTIVE' | 'INACTIVE';
+  assignedDoctorIds?: string[];
 }
 
 export interface DoctorSchedule {
