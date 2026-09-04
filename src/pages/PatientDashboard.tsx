@@ -4,7 +4,11 @@ import {
   FileText, 
   Download, 
   Video, 
-  RefreshCw
+  RefreshCw,
+  Gift,
+  Copy,
+  Share2,
+  Users
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -171,6 +175,43 @@ export const PatientDashboard: React.FC = () => {
         </div>
 
       </div>
+
+      {/* SevaArogyam Referral Wallet */}
+      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="grid lg:grid-cols-[1.05fr_.95fr]">
+          <div className="bg-gradient-to-br from-[#0B2545] via-[#0F4C81] to-[#0c6b67] p-6 text-white sm:p-8">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-200">
+              <Gift className="h-3.5 w-3.5" /> SevaArogyam Rewards
+            </span>
+            <h3 className="mt-4 text-2xl font-black">{language === 'en' ? 'Share care. Earn rewards.' : 'देखभाल साझा करें। रिवॉर्ड पाएं।'}</h3>
+            <p className="mt-2 max-w-md text-sm leading-6 text-slate-300">
+              {language === 'en' ? 'Refer friends and family to trusted healthcare. Every successful referral earns a reward for your next service.' : 'परिवार और दोस्तों को भरोसेमंद स्वास्थ्य सेवाओं के लिए रेफर करें। हर सफल रेफरल पर अगली सेवा के लिए रिवॉर्ड पाएं।'}
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button onClick={() => window.location.assign('/referrals')} className="rounded-xl bg-emerald-400 px-4 py-2.5 text-xs font-black text-[#0B2545]">
+                <Share2 className="mr-1 inline h-3.5 w-3.5" />{language === 'en' ? 'Refer & earn' : 'रेफर करें और कमाएं'}
+              </button>
+              <button onClick={() => window.location.assign('/referrals')} className="rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold text-white">
+                {language === 'en' ? 'View rewards' : 'रिवॉर्ड देखें'}
+              </button>
+            </div>
+          </div>
+          <div className="p-6 sm:p-8">
+            <div className="flex items-center justify-between">
+              <div><p className="text-xs font-black uppercase tracking-[.16em] text-emerald-700">{language === 'en' ? 'Your referral wallet' : 'आपका रेफरल वॉलेट'}</p><h4 className="mt-1 font-black text-slate-900">{language === 'en' ? 'Ready to share' : 'शेयर करने के लिए तैयार'}</h4></div>
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-700"><Gift className="h-5 w-5" /></div>
+            </div>
+            <div className="mt-5 flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{language === 'en' ? 'Referral code' : 'रेफरल कोड'}</p><code className="font-black text-[#0F4C81]">SEVA-RAMESH-24</code></div>
+              <button onClick={() => navigator.clipboard?.writeText('SEVA-RAMESH-24')} className="rounded-xl bg-white p-2.5 text-slate-600 shadow-sm hover:text-[#0F4C81]" title="Copy referral code"><Copy className="h-4 w-4" /></button>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-emerald-50 p-3"><div className="flex items-center gap-1 text-emerald-700"><Users className="h-3.5 w-3.5" /><span className="text-[10px] font-black uppercase">{language === 'en' ? 'Referrals' : 'रेफरल'}</span></div><p className="mt-2 text-xl font-black text-slate-900">3</p></div>
+              <div className="rounded-xl bg-amber-50 p-3"><p className="text-[10px] font-black uppercase text-amber-700">{language === 'en' ? 'Available reward' : 'उपलब्ध रिवॉर्ड'}</p><p className="mt-2 text-xl font-black text-slate-900">₹450</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
 
     </div>
   );

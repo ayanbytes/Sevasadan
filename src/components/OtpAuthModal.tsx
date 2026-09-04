@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
-import { X, Phone, Lock, CheckCircle2, User, Sparkles, AlertCircle } from 'lucide-react';
+import { X, Phone, Lock, CheckCircle2, User, Sparkles, AlertCircle, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const OtpAuthModal: React.FC = () => {
-  const { isAuthModalOpen, closeAuthModal, loginWithPhoneOtp, language } = useApp();
+  const { isAuthModalOpen, closeAuthModal, openAdminAuthModal, loginWithPhoneOtp, loginWithEmailAndPassword, language } = useApp();
 
+  const [authMode, setAuthMode] = useState<'OTP' | 'STAFF_EMAIL'>('OTP');
   const [step, setStep] = useState<'PHONE' | 'OTP' | 'PROFILE'>('PHONE');
   const [phone, setPhone] = useState<string>('9826198261');
   const [otp, setOtp] = useState<string>('123456');
   const [name, setName] = useState<string>('');
+  
+  // Staff Email login state
+  const [emailOrLoginId, setEmailOrLoginId] = useState<string>('dr.ankur@sevasadanclinic.in');
+  const [staffPassword, setStaffPassword] = useState<string>('Doc@sevasadan2026');
+
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
@@ -60,11 +66,33 @@ export const OtpAuthModal: React.FC = () => {
     resetForm();
   };
 
+  const handleStaffEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const res = await loginWithEmailAndPassword(emailOrLoginId, staffPassword);
+      setLoading(false);
+      if (res.success) {
+        closeAuthModal();
+        resetForm();
+      } else {
+        setError(res.message || 'Login failed');
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setError(err.message || 'Login error');
+    }
+  };
+
   const resetForm = () => {
+    setAuthMode('OTP');
     setStep('PHONE');
     setPhone('9826198261');
     setOtp('123456');
     setName('');
+    setEmailOrLoginId('dr.ankur@sevasadanclinic.in');
+    setStaffPassword('Doc@sevasadan2026');
     setError('');
   };
 
@@ -95,7 +123,29 @@ export const OtpAuthModal: React.FC = () => {
         </div>
 
         {/* Content Body */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-5">
+
+          {/* Mode Switcher Tabs */}
+          <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => { setAuthMode('OTP'); setError(''); }}
+              className={`flex-1 py-2 rounded-lg transition cursor-pointer ${
+                authMode === 'OTP' ? 'bg-white text-[#0F4C81] shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              {language === 'en' ? 'Patient Phone OTP' : 'मरीज फोन ओटीपी'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAuthMode('STAFF_EMAIL'); setError(''); }}
+              className={`flex-1 py-2 rounded-lg transition cursor-pointer ${
+                authMode === 'STAFF_EMAIL' ? 'bg-white text-emerald-800 shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              {language === 'en' ? 'Doctor / Staff Email Login' : 'डॉक्टर / स्टाफ ईमेल लॉगिन'}
+            </button>
+          </div>
 
           {error && (
             <div className="flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3 rounded-xl">
@@ -104,8 +154,8 @@ export const OtpAuthModal: React.FC = () => {
             </div>
           )}
 
-          {/* STEP 1: Phone Input */}
-          {step === 'PHONE' && (
+          {/* STEP 1: Phone Input (Patient OTP) */}
+          {authMode === 'OTP' && step === 'PHONE' && (
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
@@ -154,13 +204,6 @@ export const OtpAuthModal: React.FC = () => {
                   >
                     Doctor (Dr. Rajesh)
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => quickFillDemo('9900000000')}
-                    className="text-[11px] bg-white border border-slate-300 hover:border-amber-600 px-2.5 py-1 rounded-lg font-medium text-slate-700 hover:text-amber-700 transition"
-                  >
-                    Admin (Central)
-                  </button>
                 </div>
               </div>
 
@@ -175,6 +218,92 @@ export const OtpAuthModal: React.FC = () => {
                   <>
                     <span>{language === 'en' ? 'Get Verification Code' : 'ओटीपी प्राप्त करें'}</span>
                   </>
+                )}
+              </button>
+
+              <div className="pt-2 border-t border-slate-100 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeAuthModal();
+                    openAdminAuthModal();
+                  }}
+                  className="text-xs font-bold text-[#0F4C81] hover:text-[#0B2545] underline flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{language === 'en' ? 'Hospital Administrator? Sign in with Admin Email' : 'अस्पताल प्रशासक? ईमेल आईडी से लॉगिन करें'}</span>
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* DOCTOR / DESK STAFF EMAIL & PASSWORD LOGIN MODE */}
+          {authMode === 'STAFF_EMAIL' && (
+            <form onSubmit={handleStaffEmailLogin} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  {language === 'en' ? 'Email Address or Login ID' : 'ईमेल आईडी या लॉगिन आईडी'}
+                </label>
+                <input
+                  type="text"
+                  value={emailOrLoginId}
+                  onChange={(e) => setEmailOrLoginId(e.target.value)}
+                  placeholder="e.g. dr.ankur@sevasadanclinic.in or DOC-2026-001"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  {language === 'en' ? 'Protected Password' : 'पासवर्ड'}
+                </label>
+                <input
+                  type="password"
+                  value={staffPassword}
+                  onChange={(e) => setStaffPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                  required
+                />
+              </div>
+
+              {/* Demo Fill Quick Buttons */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Demo Login Credentials:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmailOrLoginId('dr.ankur@sevasadanclinic.in');
+                      setStaffPassword('Doc@sevasadan2026');
+                    }}
+                    className="text-[10px] bg-white border border-emerald-300 text-emerald-800 font-bold px-2 py-1 rounded-lg"
+                  >
+                    Dr. Ankur (Doctor)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmailOrLoginId('desk.sarangpur@sevasadanclinic.in');
+                      setStaffPassword('Staff@sevasadan2026');
+                    }}
+                    className="text-[10px] bg-white border border-purple-300 text-purple-800 font-bold px-2 py-1 rounded-lg"
+                  >
+                    Desk Staff (Sarangpur)
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {loading ? (
+                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  <span>{language === 'en' ? 'Log Into Portal' : 'पोर्टल में लॉगिन करें'}</span>
                 )}
               </button>
             </form>

@@ -47,6 +47,21 @@ export interface DoctorUser {
   satisfactionRate?: number;
   opdScheduleSummary?: string;
   phone?: string;
+  email?: string;
+  loginId?: string;
+  password?: string;
+}
+
+export interface DeskStaffUser {
+  id: string;
+  name: string;
+  email: string;
+  loginId: string;
+  phone: string;
+  branchId: string;
+  role: 'DESK_STAFF';
+  createdAt: string;
+  password?: string;
 }
 
 export interface SpecialtyDetail {
@@ -81,9 +96,10 @@ export interface AdminUser {
   email: string;
   role: 'ADMIN';
   managedBranches: string[];
+  phone?: string;
 }
 
-export type AppUser = PatientUser | DoctorUser | AdminUser;
+export type AppUser = PatientUser | DoctorUser | AdminUser | DeskStaffUser;
 
 export interface Clinic {
   id: string;

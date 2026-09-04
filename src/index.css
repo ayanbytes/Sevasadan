@@ -30,6 +30,7 @@
     max-width: 100% !important;
     width: 100% !important;
   }
+  html:lang(hi), html:lang(hi) body { font-family: 'Noto Sans Devanagari', 'Plus Jakarta Sans', sans-serif; }
 }
 
 /* Glassmorphism & Modern Card Effects */

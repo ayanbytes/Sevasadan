@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { OtpAuthModal } from './components/OtpAuthModal';
+import { AdminAuthModal } from './components/AdminAuthModal';
 import { BookingWizardModal } from './components/booking/BookingWizardModal';
 import { DoctorProfileModal } from './components/DoctorProfileModal';
 import { PublicPortal } from './pages/PublicPortal';
@@ -17,6 +18,9 @@ import { ArticleDetail } from './pages/ArticleDetail';
 import { TermsConditions } from './pages/TermsConditions';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { DeskStaffPortal } from './pages/DeskStaffPortal';
+import { ServiceCatalog } from './pages/ServiceCatalog';
+import { Training } from './pages/Training';
+import { Referrals } from './pages/Referrals';
 
 const getTabFromPath = (path: string): string => {
   const cleanPath = path.toLowerCase().replace(/\/$/, '');
@@ -31,11 +35,16 @@ const getTabFromPath = (path: string): string => {
   if (cleanPath === '/patient-dashboard') return 'patient-dashboard';
   if (cleanPath === '/terms') return 'terms';
   if (cleanPath === '/privacy') return 'privacy';
+  if (cleanPath === '/pharmacy') return 'pharmacy';
+  if (cleanPath === '/diagnostics') return 'diagnostics';
+  if (cleanPath === '/laboratory') return 'laboratory';
+  if (cleanPath === '/training') return 'training';
+  if (cleanPath === '/referrals') return 'referrals';
   return 'home';
 };
 
 const MainContent: React.FC = () => {
-  const { activeRole, switchRole } = useApp();
+  const { activeRole, switchRole, language, isAdminAuthenticated, openAdminAuthModal } = useApp();
 
   const [currentTab, setCurrentTabState] = useState<string>(() => {
     return getTabFromPath(window.location.pathname);
@@ -47,7 +56,9 @@ const MainContent: React.FC = () => {
     let newPath = '/';
     if (tab === 'admin') {
       newPath = '/admin';
-      if (activeRole !== 'ADMIN') {
+      if (!isAdminAuthenticated) {
+        openAdminAuthModal();
+      } else if (activeRole !== 'ADMIN') {
         switchRole('ADMIN');
       }
     } else if (tab === 'about') {
@@ -76,6 +87,8 @@ const MainContent: React.FC = () => {
       newPath = '/terms';
     } else if (tab === 'privacy') {
       newPath = '/privacy';
+    } else if (['pharmacy', 'diagnostics', 'laboratory', 'training', 'referrals'].includes(tab)) {
+      newPath = '/' + tab;
     } else {
       newPath = '/';
     }
@@ -89,13 +102,21 @@ const MainContent: React.FC = () => {
   useEffect(() => {
     const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
     if (path === '/adminp' || path === '/admin') {
-      switchRole('ADMIN');
+      if (!isAdminAuthenticated) {
+        openAdminAuthModal();
+      } else {
+        switchRole('ADMIN');
+      }
     } else if (path === '/doctor' || path === '/doctor-console') {
       switchRole('DOCTOR');
     } else if (path === '/support' || path === '/desk-staff') {
       switchRole('DESK_STAFF');
     }
-  }, []);
+  }, [isAdminAuthenticated]);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   // Listen for browser navigation (back/forward)
   useEffect(() => {
@@ -128,6 +149,11 @@ const MainContent: React.FC = () => {
         {currentTab === 'article-detail' && <ArticleDetail onBack={() => handleSetCurrentTab('home')} />}
         {currentTab === 'terms' && <TermsConditions onBack={() => handleSetCurrentTab('home')} />}
         {currentTab === 'privacy' && <PrivacyPolicy onBack={() => handleSetCurrentTab('home')} />}
+        {currentTab === 'pharmacy' && <ServiceCatalog kind="pharmacy" />}
+        {currentTab === 'diagnostics' && <ServiceCatalog kind="diagnostics" />}
+        {currentTab === 'laboratory' && <ServiceCatalog kind="laboratory" />}
+        {currentTab === 'training' && <Training />}
+        {currentTab === 'referrals' && <Referrals />}
       </main>
 
       {/* Footer */}
@@ -135,6 +161,7 @@ const MainContent: React.FC = () => {
 
       {/* Global Modals */}
       <OtpAuthModal />
+      <AdminAuthModal />
       <BookingWizardModal />
       <DoctorProfileModal />
     </div>

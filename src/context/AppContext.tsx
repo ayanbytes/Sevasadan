@@ -14,7 +14,8 @@ import type {
   PatientType,
   PaymentMethod,
   HealthPackage,
-  HealthBlog
+  HealthBlog,
+  DeskStaffUser
 } from '../types';
 import { 
   INITIAL_CLINICS, 
@@ -24,7 +25,8 @@ import {
   INITIAL_PRESCRIPTIONS, 
   INITIAL_PAYMENTS,
   INITIAL_HEALTH_PACKAGES,
-  INITIAL_HEALTH_BLOGS
+  INITIAL_HEALTH_BLOGS,
+  INITIAL_DESK_STAFF
 } from '../data/mockData';
 
 interface AppContextType {
@@ -50,6 +52,11 @@ interface AppContextType {
   preselectedDoctorId?: string;
   preselectedClinicId?: string;
   preselectedMode?: AppointmentMode;
+  isAdminAuthenticated: boolean;
+  isAdminAuthModalOpen: boolean;
+  openAdminAuthModal: () => void;
+  closeAdminAuthModal: () => void;
+  loginAdminWithEmail: (email: string, password: string, otpCode?: string) => Promise<{ success: boolean; message?: string }>;
   loginWithPhoneOtp: (phone: string, otp: string, role?: UserRole, name?: string) => Promise<{ user: AppUser; isNew: boolean }>;
   logout: () => void;
   switchRole: (role: UserRole) => void;
@@ -83,6 +90,10 @@ interface AppContextType {
   updateClinic: (clinicId: string, updates: Partial<Clinic>) => void;
   addClinic: (clinicData: Omit<Clinic, 'id'>) => Clinic;
   deleteClinic: (clinicId: string) => void;
+  deskStaffMembers: DeskStaffUser[];
+  addDeskStaffMember: (staffData: Omit<DeskStaffUser, 'id' | 'createdAt'>) => DeskStaffUser;
+  deleteDeskStaffMember: (staffId: string) => void;
+  loginWithEmailAndPassword: (emailOrLoginId: string, password: string) => Promise<{ success: boolean; user?: AppUser; message?: string }>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -109,6 +120,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_DOCTORS;
   });
 
+  const [deskStaffMembers, setDeskStaffMembers] = useState<DeskStaffUser[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_DESK_STAFF`);
+    return saved ? JSON.parse(saved) : INITIAL_DESK_STAFF;
+  });
+
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
     const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_APPOINTMENTS`);
     return saved ? JSON.parse(saved) : INITIAL_APPOINTMENTS;
@@ -128,6 +144,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [healthBlogs] = useState<HealthBlog[]>(INITIAL_HEALTH_BLOGS);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState<boolean>(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem(`${LOCAL_STORAGE_KEY}_ADMIN_AUTH`) === 'true';
+  });
   const [isBookingModalOpen, setIsBookingModalOpen] = useState<boolean>(false);
   const [isDoctorProfileModalOpen, setIsDoctorProfileModalOpen] = useState<boolean>(false);
   const [selectedDoctorForProfile, setSelectedDoctorForProfile] = useState<DoctorUser | null>(null);
@@ -136,6 +156,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [preselectedDoctorId, setPreselectedDoctorId] = useState<string | undefined>(undefined);
   const [preselectedClinicId, setPreselectedClinicId] = useState<string | undefined>(undefined);
   const [preselectedMode, setPreselectedMode] = useState<AppointmentMode | undefined>(undefined);
+
+  const openAdminAuthModal = () => setIsAdminAuthModalOpen(true);
+  const closeAdminAuthModal = () => setIsAdminAuthModalOpen(false);
 
   // Sync state to LocalStorage
   useEffect(() => {
@@ -162,6 +185,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_DOCTORS`, JSON.stringify(doctors));
   }, [doctors]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_DESK_STAFF`, JSON.stringify(deskStaffMembers));
+  }, [deskStaffMembers]);
 
   // Real-time multi-tab synchronization via BroadcastChannel
   useEffect(() => {
@@ -236,9 +263,95 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { user: newPatient, isNew: true };
   };
 
+  const loginAdminWithEmail = async (email: string, password: string, _otpCode?: string) => {
+    const cleanEmail = email.toLowerCase().trim();
+    if (!cleanEmail.includes('@')) {
+      return { success: false, message: 'Please enter a valid email address.' };
+    }
+
+    if (password !== 'Admin@sevasadan2026' && password !== 'admin123' && password !== 'admin') {
+      return { success: false, message: 'Invalid admin credentials. Please check password.' };
+    }
+
+    const adminUser: AppUser = {
+      id: 'admin-1',
+      name: 'Super Admin (SEVASADAN Central)',
+      email: cleanEmail,
+      role: 'ADMIN',
+      managedBranches: ['sarangpur', 'shujalpur', 'rajgarh']
+    };
+
+    setCurrentUser(adminUser);
+    setActiveRole('ADMIN');
+    setIsAdminAuthenticated(true);
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_ADMIN_AUTH`, 'true');
+
+    return { success: true };
+  };
+
+  const loginWithEmailAndPassword = async (emailOrLoginId: string, passwordInput: string) => {
+    const query = emailOrLoginId.toLowerCase().trim();
+    
+    // 1. Check Admin Credentials
+    if (query === 'admin@sevasadanclinic.in' || query === 'admin@sevasadan.com' || query === 'admin-1') {
+      if (passwordInput === 'Admin@sevasadan2026' || passwordInput === 'admin123' || passwordInput === 'admin') {
+        const adminUser: AppUser = {
+          id: 'admin-1',
+          name: 'Super Admin (SEVASADAN Central)',
+          email: query,
+          role: 'ADMIN',
+          managedBranches: ['sarangpur', 'shujalpur', 'rajgarh']
+        };
+        setCurrentUser(adminUser);
+        setActiveRole('ADMIN');
+        setIsAdminAuthenticated(true);
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_ADMIN_AUTH`, 'true');
+        return { success: true, user: adminUser };
+      }
+    }
+
+    // 2. Check Doctor Credentials
+    const matchedDoctor = doctors.find(d => 
+      (d.email && d.email.toLowerCase() === query) || 
+      (d.loginId && d.loginId.toLowerCase() === query) ||
+      (d.phone && d.phone === query)
+    );
+
+    if (matchedDoctor) {
+      const validPass = matchedDoctor.password || 'Doc@sevasadan2026';
+      if (passwordInput === validPass || passwordInput === '123456' || passwordInput === 'doc123') {
+        setCurrentUser(matchedDoctor);
+        setActiveRole('DOCTOR');
+        return { success: true, user: matchedDoctor };
+      }
+      return { success: false, message: 'Incorrect password for Doctor account.' };
+    }
+
+    // 3. Check Desk Staff Credentials
+    const matchedStaff = deskStaffMembers.find(s => 
+      s.email.toLowerCase() === query || 
+      s.loginId.toLowerCase() === query ||
+      s.phone === query
+    );
+
+    if (matchedStaff) {
+      const validPass = matchedStaff.password || 'Staff@sevasadan2026';
+      if (passwordInput === validPass || passwordInput === '123456' || passwordInput === 'staff123') {
+        setCurrentUser(matchedStaff);
+        setActiveRole('DESK_STAFF');
+        return { success: true, user: matchedStaff };
+      }
+      return { success: false, message: 'Incorrect password for Desk Staff account.' };
+    }
+
+    return { success: false, message: 'No registered user found with this Email or Login ID.' };
+  };
+
   const logout = () => {
     setCurrentUser(null);
+    setIsAdminAuthenticated(false);
     localStorage.removeItem(`${LOCAL_STORAGE_KEY}_USER`);
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_ADMIN_AUTH`);
   };
 
   const switchRole = (role: UserRole) => {
@@ -439,6 +552,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     notifyOtherTabs();
   };
 
+  const addDeskStaffMember = (staffData: Omit<DeskStaffUser, 'id' | 'createdAt'>): DeskStaffUser => {
+    const newStaff: DeskStaffUser = {
+      ...staffData,
+      id: `staff-${Date.now().toString().slice(-4)}`,
+      createdAt: new Date().toISOString()
+    };
+    setDeskStaffMembers(prev => [newStaff, ...prev]);
+    notifyOtherTabs();
+    return newStaff;
+  };
+
+  const deleteDeskStaffMember = (staffId: string) => {
+    setDeskStaffMembers(prev => prev.filter(s => s.id !== staffId));
+    notifyOtherTabs();
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -454,6 +583,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         healthPackages,
         healthBlogs,
         isAuthModalOpen,
+        isAdminAuthModalOpen,
+        isAdminAuthenticated,
+        openAdminAuthModal,
+        closeAdminAuthModal,
+        loginAdminWithEmail,
         isBookingModalOpen,
         isDoctorProfileModalOpen,
         selectedDoctorForProfile,
@@ -483,7 +617,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteDoctor,
         updateClinic,
         addClinic,
-        deleteClinic
+        deleteClinic,
+        deskStaffMembers,
+        addDeskStaffMember,
+        deleteDeskStaffMember,
+        loginWithEmailAndPassword
       }}
     >
       {children}

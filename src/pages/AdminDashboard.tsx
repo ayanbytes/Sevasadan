@@ -13,10 +13,14 @@ import {
   MapPin, 
   X, 
   FileText,
-  Clock
+  Clock,
+  Lock,
+  ShieldCheck,
+  Mail
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import type { DoctorUser, Clinic } from '../types';
+import { CredentialsDispatchedModal } from '../components/CredentialsDispatchedModal';
 
 export const AdminDashboard: React.FC = () => {
   const { 
@@ -29,10 +33,16 @@ export const AdminDashboard: React.FC = () => {
     deleteDoctor,
     addClinic,
     updateClinic,
-    deleteClinic
+    deleteClinic,
+    deskStaffMembers,
+    addDeskStaffMember,
+    deleteDeskStaffMember,
+    isAdminAuthenticated,
+    openAdminAuthModal,
+    activeRole
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'BRANCHES' | 'DOCTORS' | 'REVENUE' | 'EMR'>('OVERVIEW');
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'BRANCHES' | 'DOCTORS' | 'STAFF' | 'REVENUE' | 'EMR'>('OVERVIEW');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Doctor Form Modal State
@@ -40,6 +50,8 @@ export const AdminDashboard: React.FC = () => {
   const [editingDoctor, setEditingDoctor] = useState<DoctorUser | null>(null);
   const [doctorFormData, setDoctorFormData] = useState({
     name: '',
+    email: '',
+    phone: '',
     specialization: 'General Physician & Diabetologist',
     qualification: 'MD (Internal Medicine)',
     experienceYears: 10,
@@ -52,6 +64,26 @@ export const AdminDashboard: React.FC = () => {
     opdScheduleSummary: 'Mon-Sat: 09:00 AM - 02:00 PM',
     avatarUrl: '/hero-doctor.png'
   });
+
+  // Desk Staff Form Modal State
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [staffFormData, setStaffFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    branchId: 'sarangpur'
+  });
+
+  // Credentials Dispatcher Modal State
+  const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
+  const [dispatchedCredentials, setDispatchedCredentials] = useState<{
+    name: string;
+    email: string;
+    loginId: string;
+    password: string;
+    role: 'DOCTOR' | 'DESK_STAFF';
+    phone?: string;
+  } | null>(null);
 
   // Branch Form Modal State
   const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
@@ -91,6 +123,8 @@ export const AdminDashboard: React.FC = () => {
       setEditingDoctor(doc);
       setDoctorFormData({
         name: doc.name,
+        email: doc.email || '',
+        phone: doc.phone || '',
         specialization: doc.specialization,
         qualification: doc.qualification,
         experienceYears: doc.experienceYears,
@@ -107,6 +141,8 @@ export const AdminDashboard: React.FC = () => {
       setEditingDoctor(null);
       setDoctorFormData({
         name: 'Dr. ',
+        email: '',
+        phone: '',
         specialization: 'General Physician & Diabetologist',
         qualification: 'MBBS, MD',
         experienceYears: 8,
@@ -126,35 +162,84 @@ export const AdminDashboard: React.FC = () => {
   // Save Doctor Submit
   const handleDoctorSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const generatedLoginId = editingDoctor?.loginId || `DOC-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const generatedPassword = editingDoctor?.password || `SevaDoc#${Math.floor(1000 + Math.random() * 9000)}`;
+    const doctorEmail = doctorFormData.email || `dr.${doctorFormData.name.toLowerCase().replace(/[^a-z]/g, '')}@sevasadanclinic.in`;
+
+    const docPayload = {
+      userId: editingDoctor?.userId || 'user-doc-' + Date.now(),
+      role: 'DOCTOR' as const,
+      rating: editingDoctor?.rating || 4.9,
+      totalReviews: editingDoctor?.totalReviews || 12,
+      phone: doctorFormData.phone || '98260' + Math.floor(10000 + Math.random() * 90000),
+      email: doctorEmail,
+      loginId: generatedLoginId,
+      password: generatedPassword,
+      name: doctorFormData.name,
+      specialization: doctorFormData.specialization,
+      qualification: doctorFormData.qualification,
+      experienceYears: Number(doctorFormData.experienceYears),
+      regNumber: doctorFormData.regNumber,
+      consultationFeeClinic: Number(doctorFormData.consultationFeeClinic),
+      consultationFeeOnline: Number(doctorFormData.consultationFeeOnline),
+      bio: doctorFormData.bio,
+      clinicsCovered: doctorFormData.clinicsCovered,
+      languagesSpoken: doctorFormData.languagesSpoken,
+      opdScheduleSummary: doctorFormData.opdScheduleSummary,
+      awards: editingDoctor?.awards || ['Excellence in Clinical Care 2025'],
+      educationDetails: editingDoctor?.educationDetails || [`${doctorFormData.qualification} - AIIMS / MGMC`],
+      clinicalInterests: editingDoctor?.clinicalInterests || [doctorFormData.specialization],
+      consultationsCount: editingDoctor?.consultationsCount || 150,
+      satisfactionRate: editingDoctor?.satisfactionRate || 98,
+      avatarUrl: doctorFormData.avatarUrl || '/hero-doctor.png'
+    };
+
     if (editingDoctor) {
-      updateDoctor(editingDoctor.id, doctorFormData);
+      updateDoctor(editingDoctor.id, docPayload);
     } else {
-      addDoctor({
-        userId: 'user-doc-' + Date.now(),
-        role: 'DOCTOR',
-        rating: 4.9,
-        totalReviews: 12,
-        phone: '98260' + Math.floor(10000 + Math.random() * 90000),
+      addDoctor(docPayload);
+
+      // Trigger Email Credentials Modal
+      setDispatchedCredentials({
         name: doctorFormData.name,
-        specialization: doctorFormData.specialization,
-        qualification: doctorFormData.qualification,
-        experienceYears: Number(doctorFormData.experienceYears),
-        regNumber: doctorFormData.regNumber,
-        consultationFeeClinic: Number(doctorFormData.consultationFeeClinic),
-        consultationFeeOnline: Number(doctorFormData.consultationFeeOnline),
-        bio: doctorFormData.bio,
-        clinicsCovered: doctorFormData.clinicsCovered,
-        languagesSpoken: doctorFormData.languagesSpoken,
-        opdScheduleSummary: doctorFormData.opdScheduleSummary,
-        awards: ['Excellence in Clinical Care 2025'],
-        educationDetails: [`${doctorFormData.qualification} - AIIMS / MGMC`],
-        clinicalInterests: [doctorFormData.specialization],
-        consultationsCount: 150,
-        satisfactionRate: 98,
-        avatarUrl: doctorFormData.avatarUrl || '/hero-doctor.png'
+        email: doctorEmail,
+        loginId: generatedLoginId,
+        password: generatedPassword,
+        role: 'DOCTOR',
+        phone: doctorFormData.phone
       });
+      setIsCredentialsModalOpen(true);
     }
     setIsDoctorModalOpen(false);
+  };
+
+  // Save Desk Staff Submit
+  const handleStaffSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const generatedLoginId = `STAFF-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const generatedPassword = `SevaStaff#${Math.floor(1000 + Math.random() * 9000)}`;
+
+    addDeskStaffMember({
+      name: staffFormData.name,
+      email: staffFormData.email,
+      loginId: generatedLoginId,
+      password: generatedPassword,
+      phone: staffFormData.phone || '98261' + Math.floor(10000 + Math.random() * 90000),
+      branchId: staffFormData.branchId,
+      role: 'DESK_STAFF'
+    });
+
+    setDispatchedCredentials({
+      name: staffFormData.name,
+      email: staffFormData.email,
+      loginId: generatedLoginId,
+      password: generatedPassword,
+      role: 'DESK_STAFF',
+      phone: staffFormData.phone
+    });
+    setIsCredentialsModalOpen(true);
+    setIsStaffModalOpen(false);
+    setStaffFormData({ name: '', email: '', phone: '', branchId: 'sarangpur' });
   };
 
   // Open Branch Modal for Add / Edit
@@ -217,6 +302,47 @@ export const AdminDashboard: React.FC = () => {
     setIsBranchModalOpen(false);
   };
 
+  if (!isAdminAuthenticated || activeRole !== 'ADMIN') {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
+        <div className="bg-white max-w-lg w-full rounded-3xl p-8 shadow-2xl border border-slate-200 text-center space-y-6 animate-in fade-in duration-200">
+          <div className="w-16 h-16 rounded-2xl bg-slate-950 text-amber-400 flex items-center justify-center mx-auto shadow-xl shadow-slate-950/20">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div>
+            <span className="bg-rose-100 text-rose-800 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
+              Restricted Area
+            </span>
+            <h2 className="text-2xl font-black text-slate-900 mt-2">
+              Admin Email Authentication Required
+            </h2>
+            <p className="text-xs text-slate-600 mt-2 leading-relaxed font-medium">
+              Access to the Central Hospital Administration Console is restricted. Please authenticate with your authorized hospital admin email ID and password.
+            </p>
+          </div>
+          
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 text-left text-xs space-y-2">
+            <div className="flex items-center gap-2 font-bold text-slate-800">
+              <Mail className="w-4 h-4 text-[#0F4C81]" />
+              <span>Official Admin Mail Verification</span>
+            </div>
+            <p className="text-slate-500 text-[11px] font-medium">
+              Authorized domain accounts (<code className="text-[#0F4C81] font-bold">@sevasadanclinic.in</code>) with 2FA email verification.
+            </p>
+          </div>
+
+          <button
+            onClick={openAdminAuthModal}
+            className="w-full bg-[#0B2545] hover:bg-[#0F4C81] text-white font-extrabold py-3.5 rounded-xl text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <ShieldCheck className="w-4.5 h-4.5 text-emerald-400" />
+            <span>Login with Admin Email</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
@@ -239,7 +365,7 @@ export const AdminDashboard: React.FC = () => {
 
         {/* Tab Navigation Segment */}
         <div className="flex flex-wrap items-center gap-1.5 bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/15 text-xs font-extrabold w-full lg:w-auto">
-          {(['OVERVIEW', 'BRANCHES', 'DOCTORS', 'REVENUE', 'EMR'] as const).map(tab => (
+          {(['OVERVIEW', 'BRANCHES', 'DOCTORS', 'STAFF', 'REVENUE', 'EMR'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -250,6 +376,7 @@ export const AdminDashboard: React.FC = () => {
               {tab === 'OVERVIEW' && 'Overview'}
               {tab === 'BRANCHES' && 'Branches & OPD'}
               {tab === 'DOCTORS' && 'Doctors Roster'}
+              {tab === 'STAFF' && 'Desk Staff'}
               {tab === 'REVENUE' && 'Revenue Audit'}
               {tab === 'EMR' && 'EMR Logs'}
             </button>
@@ -749,7 +876,7 @@ export const AdminDashboard: React.FC = () => {
             <form onSubmit={handleDoctorSubmit} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Doctor Name</label>
+                  <label className="block font-bold text-slate-700 mb-1">Doctor Name *</label>
                   <input
                     type="text"
                     required
@@ -757,6 +884,30 @@ export const AdminDashboard: React.FC = () => {
                     onChange={(e) => setDoctorFormData({ ...doctorFormData, name: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-[#0F4C81] outline-none"
                     placeholder="Dr. Full Name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Doctor Official Email * (For Credentials)</label>
+                  <input
+                    type="email"
+                    required
+                    value={doctorFormData.email}
+                    onChange={(e) => setDoctorFormData({ ...doctorFormData, email: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-emerald-700 focus:ring-2 focus:ring-[#0F4C81] outline-none"
+                    placeholder="dr.name@sevasadanclinic.in"
+                  />
+                  <span className="text-[10px] text-slate-400 font-medium mt-0.5 block">Protected login credentials will be emailed to this address.</span>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Contact Mobile Number</label>
+                  <input
+                    type="tel"
+                    value={doctorFormData.phone}
+                    onChange={(e) => setDoctorFormData({ ...doctorFormData, phone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-[#0F4C81] outline-none"
+                    placeholder="98260 XXXXX"
                   />
                 </div>
 
@@ -892,15 +1043,173 @@ export const AdminDashboard: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0F4C81] hover:bg-[#0B2545] text-white font-black shadow-md"
+                  className="px-5 py-2 rounded-xl bg-[#0F4C81] hover:bg-[#0B2545] text-white font-black shadow-md flex items-center gap-2"
                 >
-                  Save Doctor Profile
+                  <Mail className="w-4 h-4 text-emerald-300" />
+                  <span>Save & Email Login Credentials</span>
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* DESK STAFF MANAGEMENT TAB CONTENT */}
+      {activeTab === 'STAFF' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-black text-slate-900">Hospital Reception & Desk Staff</h2>
+              <p className="text-xs text-slate-500 font-medium">Manage receptionists, desk operators, and dispatch email login credentials.</p>
+            </div>
+            <button
+              onClick={() => setIsStaffModalOpen(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow-md flex items-center gap-2 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Register New Desk Staff</span>
+            </button>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-black uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="py-4 px-6">Member Name</th>
+                    <th className="py-4 px-6">Email Address</th>
+                    <th className="py-4 px-6">Login ID</th>
+                    <th className="py-4 px-6">Assigned Branch</th>
+                    <th className="py-4 px-6">Phone Number</th>
+                    <th className="py-4 px-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
+                  {deskStaffMembers.map(staff => (
+                    <tr key={staff.id} className="hover:bg-slate-50/80 transition">
+                      <td className="py-4 px-6 font-bold text-slate-900 flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 font-black flex items-center justify-center text-xs">
+                          {staff.name.charAt(0)}
+                        </div>
+                        <span>{staff.name}</span>
+                      </td>
+                      <td className="py-4 px-6 font-mono text-emerald-700">{staff.email}</td>
+                      <td className="py-4 px-6 font-mono font-bold text-[#0F4C81]">{staff.loginId}</td>
+                      <td className="py-4 px-6">
+                        <span className="bg-sky-50 text-[#0F4C81] px-2.5 py-1 rounded-md font-bold uppercase text-[10px]">
+                          {staff.branchId}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">{staff.phone}</td>
+                      <td className="py-4 px-6 text-right">
+                        <button
+                          onClick={() => deleteDeskStaffMember(staff.id)}
+                          className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition"
+                          title="Delete Member"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REGISTER DESK STAFF MODAL */}
+      {isStaffModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-emerald-600" />
+                <span>Register New Desk Staff</span>
+              </h3>
+              <button onClick={() => setIsStaffModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleStaffSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Staff Member Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={staffFormData.name}
+                  onChange={(e) => setStaffFormData({ ...staffFormData, name: e.target.value })}
+                  placeholder="e.g. Anjali Sharma"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-[#0F4C81] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Official Email Address * (For Credentials Email)</label>
+                <input
+                  type="email"
+                  required
+                  value={staffFormData.email}
+                  onChange={(e) => setStaffFormData({ ...staffFormData, email: e.target.value })}
+                  placeholder="staff.name@sevasadanclinic.in"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-emerald-700 focus:ring-2 focus:ring-[#0F4C81] outline-none"
+                />
+                <span className="text-[10px] text-slate-400 font-medium mt-0.5 block">Protected login credentials will be emailed to this inbox.</span>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Contact Phone Number</label>
+                <input
+                  type="tel"
+                  value={staffFormData.phone}
+                  onChange={(e) => setStaffFormData({ ...staffFormData, phone: e.target.value })}
+                  placeholder="98261 XXXXX"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-[#0F4C81] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Assigned Branch</label>
+                <select
+                  value={staffFormData.branchId}
+                  onChange={(e) => setStaffFormData({ ...staffFormData, branchId: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-[#0F4C81] outline-none"
+                >
+                  <option value="sarangpur">Sarangpur Branch</option>
+                  <option value="shujalpur">Shujalpur Branch</option>
+                  <option value="rajgarh">Rajgarh Branch</option>
+                </select>
+              </div>
+
+              <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsStaffModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-slate-600 font-bold hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black shadow-md flex items-center gap-2 cursor-pointer"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>Register & Email Credentials</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREDENTIALS DISPATCHED EMAIL MODAL */}
+      <CredentialsDispatchedModal
+        isOpen={isCredentialsModalOpen}
+        onClose={() => setIsCredentialsModalOpen(false)}
+        credentials={dispatchedCredentials}
+      />
 
       {/* BRANCH ADD / EDIT MODAL */}
       {isBranchModalOpen && (

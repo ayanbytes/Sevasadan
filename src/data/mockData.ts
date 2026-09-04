@@ -1,4 +1,4 @@
-import type { Clinic, DoctorUser, PatientUser, Appointment, Prescription, PaymentRecord, HealthPackage, HealthBlog, SpecialtyDetail, FacilityItem } from '../types';
+import type { Clinic, DoctorUser, PatientUser, Appointment, Prescription, PaymentRecord, HealthPackage, HealthBlog, SpecialtyDetail, FacilityItem, DeskStaffUser } from '../types';
 
 export const INITIAL_CLINICS: Clinic[] = [
   {
@@ -54,6 +54,31 @@ export const INITIAL_CLINICS: Clinic[] = [
   }
 ];
 
+export const INITIAL_DESK_STAFF: DeskStaffUser[] = [
+  {
+    id: 'staff-1',
+    name: 'Ramesh Sharma (Reception Lead)',
+    email: 'desk.sarangpur@sevasadanclinic.in',
+    loginId: 'STAFF-2026-101',
+    phone: '9826198261',
+    branchId: 'sarangpur',
+    role: 'DESK_STAFF',
+    createdAt: '2026-01-15T09:00:00Z',
+    password: 'Staff@sevasadan2026'
+  },
+  {
+    id: 'staff-2',
+    name: 'Pooja Verma (Shujalpur Desk)',
+    email: 'desk.shujalpur@sevasadanclinic.in',
+    loginId: 'STAFF-2026-102',
+    phone: '9826298262',
+    branchId: 'shujalpur',
+    role: 'DESK_STAFF',
+    createdAt: '2026-02-01T10:30:00Z',
+    password: 'Staff@sevasadan2026'
+  }
+];
+
 export const INITIAL_DOCTORS: DoctorUser[] = [
   {
     id: 'doc-ankur',
@@ -77,7 +102,11 @@ export const INITIAL_DOCTORS: DoctorUser[] = [
     clinicalInterests: ['Neonatal Surgery', 'Pediatric Urology', 'Congenital Anomalies', 'Laparoscopic Surgery', 'Antenatal Diagnosis'],
     consultationsCount: 16500,
     satisfactionRate: 99.2,
-    opdScheduleSummary: 'Civil Hospital Sarangpur & District Hospital Rajgarh: Mon to Sat'
+    opdScheduleSummary: 'Civil Hospital Sarangpur & District Hospital Rajgarh: Mon to Sat',
+    email: 'dr.ankur@sevasadanclinic.in',
+    loginId: 'DOC-2026-001',
+    password: 'Doc@sevasadan2026',
+    phone: '9826011223'
   },
   {
     id: 'doc-rajesh',

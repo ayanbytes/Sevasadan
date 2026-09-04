@@ -39,7 +39,7 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab }) => {
               {/* Google Play Store Badge */}
               <a
                 href="#download-android"
-                onClick={(e) => { e.preventDefault(); alert('SEVASADAN Android App link sent to your phone!'); }}
+                onClick={(e) => { e.preventDefault(); alert('SevaArogyam Android App link sent to your phone!'); }}
                 className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl flex items-center gap-3 transition shadow-md group cursor-pointer"
               >
                 <svg className="w-6 h-6 fill-current text-emerald-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
@@ -54,7 +54,7 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab }) => {
               {/* Apple App Store Badge */}
               <a
                 href="#download-ios"
-                onClick={(e) => { e.preventDefault(); alert('SEVASADAN iOS App link sent to your phone!'); }}
+                onClick={(e) => { e.preventDefault(); alert('SevaArogyam iOS App link sent to your phone!'); }}
                 className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl flex items-center gap-3 transition shadow-md group cursor-pointer"
               >
                 <svg className="w-6 h-6 fill-current text-slate-100 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
@@ -115,7 +115,7 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab }) => {
             <h4 className="font-black text-slate-900 text-xs uppercase tracking-wider">Overview</h4>
             <ul className="space-y-2 text-slate-600 font-medium">
               <li>
-                <button onClick={() => setCurrentTab('about')} className="hover:text-[#0F4C81] transition cursor-pointer">About SEVASADAN</button>
+                <button onClick={() => setCurrentTab('about')} className="hover:text-[#0F4C81] transition cursor-pointer">About SevaArogyam</button>
               </li>
               <li>
                 <button onClick={() => setCurrentTab('locations')} className="hover:text-[#0F4C81] transition cursor-pointer">Hospital Branches</button>
@@ -140,7 +140,10 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab }) => {
                 <button onClick={() => openBookingModal(undefined, undefined, 'VIDEO')} className="hover:text-[#0F4C81] transition cursor-pointer">Book Video Consultation</button>
               </li>
               <li>
-                <button onClick={() => setCurrentTab('locations')} className="hover:text-[#0F4C81] transition cursor-pointer">24/7 In-House Pharmacy</button>
+                <button onClick={() => setCurrentTab('pharmacy')} className="hover:text-[#0F4C81] transition cursor-pointer">24/7 Pharmacy</button>
+              </li>
+              <li>
+                <button onClick={() => setCurrentTab('training')} className="hover:text-[#0F4C81] transition cursor-pointer">OT Training Academy</button>
               </li>
             </ul>
           </div>
@@ -195,7 +198,7 @@ export const Footer: React.FC<FooterProps> = ({ setCurrentTab }) => {
         {/* 3. BOTTOM COPYRIGHT BAR WITH ASG SOLUTIONS LOGO CREDIT */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 pt-2">
           
-          <p>© 2026 SEVASADAN Health Care Network. All rights reserved.</p>
+          <p>© 2026 SevaArogyam Health Care Network. All rights reserved.</p>
 
           {/* Authentic Built by ASG Solutions Logo */}
           <div className="flex items-center gap-2.5">
